@@ -133,9 +133,14 @@ class Tebex_Module extends Module {
 		if(defined('BACK_END')){
 			if($user->hasPermission('admincp.buycraft')){
 				$cache->setCache('panel_sidebar');
+				
+				if($cache->isCached('buycraft_order') && $cache->retrieve('buycraft_order') == 15){
+					$cache->erase('buycraft_order');
+				}
+				
 				if(!$cache->isCached('buycraft_order')){
-					$order = 15;
-					$cache->store('buycraft_order', 15);
+					$order = 20;
+					$cache->store('buycraft_order', 20);
 				} else {
 					$order = $cache->retrieve('buycraft_order');
 				}
