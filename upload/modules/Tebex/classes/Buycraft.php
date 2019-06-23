@@ -290,7 +290,7 @@ class Buycraft {
                             'id' => $category->id,
                             'order' => $category->order,
                             'name' => Output::getClean($category->name),
-                            'only_subcategories' => $category->only_subcategories,
+                            'only_subcategories' => $category->only_subcategories ? 1 : 0,
                             'parent_category' => null
                         ));
 
