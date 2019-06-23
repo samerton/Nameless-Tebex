@@ -104,7 +104,8 @@ class Tebex_Module extends Module {
 
 		// Featured package
 		require_once(ROOT_PATH . '/modules/Tebex/widgets/FeaturedPackageWidget.php');
-		$widgets->add(new FeaturedPackageWidget($module_pages, $smarty, $this->_buycraft_language));
+		$module_pages = $widgets->getPages('Featured Package');
+		$widgets->add(new FeaturedPackageWidget($module_pages, $smarty, $this->_language, $this->_buycraft_language, $cache));
 
 		// Add link to navbar
 		$cache->setCache('navbar_order');

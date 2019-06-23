@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr4
+ *  NamelessMC version 2.0.0-pr6
  *
  *  License: MIT
  *
@@ -24,11 +24,11 @@ class LatestPurchasesWidget extends WidgetBase {
 		$order = DB::getInstance()->query('SELECT `order` FROM nl2_widgets WHERE `name` = ?', array('Latest Purchases'))->first();
 
 		// Set widget variables
-		$this->_module = 'Buycraft';
+		$this->_module = 'Tebex';
 		$this->_name = 'Latest Purchases';
 		$this->_location = 'right';
 		$this->_description = 'Displays a list of your store\'s most recent purchases.';
-		$this->_settings = ROOT_PATH . '/modules/Buycraft/widgets/admin/latest_purchases.php';
+		$this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/latest_purchases.php';
 		$this->_order = $order->order;
 	}
 
@@ -100,6 +100,6 @@ class LatestPurchasesWidget extends WidgetBase {
 				'NO_PURCHASES' => $this->_buycraft_language->get('language', 'no_purchases')
 			));
 
-		$this->_content = $this->_smarty->fetch('buycraft/widgets/latest_purchases.tpl');
+		$this->_content = $this->_smarty->fetch('tebex/widgets/latest_purchases.tpl');
 	}
 }
