@@ -77,7 +77,7 @@
                                     <hr />
 
                                     <button role="button" class="btn btn-primary" data-toggle="modal" data-target="#modal{$package.id}">
-                                        {$VIEW} &raquo;
+                                        {$BUY} &raquo;
                                     </button>
                                 </div>
                             </div>
