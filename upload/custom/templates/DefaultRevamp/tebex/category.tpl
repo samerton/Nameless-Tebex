@@ -87,7 +87,7 @@
                                         <div class="ui red deny button">
                                             {$CLOSE}
                                         </div>
-                                        <a class="ui positive right labeled icon button" href="{$package.link}">
+                                        <a class="ui positive right labeled icon button" target="_blank" rel="nofollow noopener" href="{$package.link}">
                                             {$BUY}
                                             <i class="shopping cart icon"></i>
                                         </a>
