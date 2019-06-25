@@ -68,7 +68,7 @@ $smarty->assign(array(
 	'STORE_URL' => $store_url,
 	'VIEW_FULL_STORE' => $buycraft_language->get('language', 'view_full_store'),
 	'HOME' => $buycraft_language->get('language', 'home'),
-	'HOME_URL' => $buycraft_url,
+	'HOME_URL' => URL::build($buycraft_url),
 	'CATEGORIES' => $categories,
 	'CONTENT' => $content
 ));
