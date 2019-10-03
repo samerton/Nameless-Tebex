@@ -37,7 +37,7 @@ if($user->isLoggedIn()){
 define('PAGE', 'panel');
 define('PARENT_PAGE', 'buycraft');
 define('PANEL_PAGE', 'buycraft_categories');
-$page_title = $buycraft_language->get('language', 'bans');
+$page_title = $buycraft_language->get('language', 'categories');
 require_once(ROOT_PATH . '/core/templates/backend_init.php');
 require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
 
