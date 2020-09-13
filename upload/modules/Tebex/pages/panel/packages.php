@@ -180,7 +180,7 @@ if(isset($_GET['action']) && $_GET['action'] == 'edit' && $user->hasPermission('
 		'PACKAGE_DESCRIPTION' => $buycraft_language->get('language', 'package_description'),
 		'PACKAGE_DESCRIPTION_VALUE' => (isset($package_description->description) ? Output::getPurified(Output::getDecoded($package_description->description)) : ''),
 		'PACKAGE_IMAGE' => $buycraft_language->get('language', 'package_image'),
-		'PACKAGE_IMAGE_VALUE' => (isset($package_description->image) && !is_null($package_description->image) ? (defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/' . 'uploads/store/' . Output::getClean(Output::getDecoded($package_description->image))) : null),
+		'PACKAGE_IMAGE_VALUE' => (isset($package_description->image) && !is_null($package_description->image) ? ((defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean(Output::getDecoded($package_description->image))) : null),
 		'UPLOAD_NEW_IMAGE' => $buycraft_language->get('language', 'upload_new_image'),
 		'BROWSE' => $language->get('general', 'browse'),
 		'BACK' => $language->get('general', 'back'),
