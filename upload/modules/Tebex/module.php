@@ -139,8 +139,8 @@ class Tebex_Module extends Module {
 				}
 				
 				if(!$cache->isCached('buycraft_order')){
-					$order = 20;
-					$cache->store('buycraft_order', 20);
+					$order = 21;
+					$cache->store('buycraft_order', 21);
 				} else {
 					$order = $cache->retrieve('buycraft_order');
 				}
