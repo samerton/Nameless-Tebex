@@ -190,7 +190,7 @@ if(isset($_GET['user'])){
 				'user_style' => $style,
 				'user_avatar' => $avatar,
 				'username' => Output::getClean($payment->player_name),
-				'user_uuid' => Output::getClean($payment->palyer_uuid),
+				'user_uuid' => Output::getClean($payment->player_uuid),
 				'currency' => Output::getPurified($payment->currency_symbol),
 				'amount' => Output::getClean($payment->amount),
 				'date' => date('d M Y, H:i', $payment->date),
