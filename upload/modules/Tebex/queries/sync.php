@@ -31,6 +31,7 @@ if(!$cache->isCached('last_sync')){
 			Buycraft::updateInformation($server_key, $ch, $db);
 			Buycraft::updateCommandQueue($server_key, $ch, $db);
 			Buycraft::updateListing($server_key, $ch, $db);
+			Buycraft::updatePackages($server_key, $ch, $db);
 			Buycraft::updatePayments($server_key, $ch, $db);
 			Buycraft::updateGiftCards($server_key, $ch, $db);
 			Buycraft::updateCoupons($server_key, $ch, $db);

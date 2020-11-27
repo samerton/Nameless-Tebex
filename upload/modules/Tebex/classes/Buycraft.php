@@ -29,6 +29,9 @@ class Buycraft {
             // Listing
             self::updateListing($server_key, $ch, $db);
 
+            // Packages
+            self::updatePackages($server_key, $ch, $db);
+
             // Payments
             self::updatePayments($server_key, $ch, $db);
 
@@ -335,6 +338,48 @@ class Buycraft {
                         }
 
 
+                    }
+                }
+            }
+
+            if(isset($close))
+                curl_close($ch);
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    // Get packages
+    public static function updatePackages($server_key = null, $ch = null, $db = null){
+        if($server_key){
+            if(!$ch){
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_HTTPHEADER, array('X-Buycraft-Secret: ' . $server_key));
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+                $close = true;
+            }
+
+            curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/packages?verbose=true');
+
+            $ch_result = curl_exec($ch);
+
+            $result = json_decode($ch_result);
+
+            if(!isset($result->error_code)){
+                $db->delete('buycraft_packages_descriptions', array('id', '<>', 0));
+
+                if(count($result)){
+                    foreach ($result as $package) {
+                        $db->insert('buycraft_packages_descriptions', array(
+                            'id' => $package->id,
+                            'package_id' => $package->id,
+                            'description' => $package->description,
+                            'image' => $package->image
+                        ));
                     }
                 }
             }
