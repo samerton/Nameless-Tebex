@@ -82,6 +82,14 @@ if(count($server_key)){
 			$success[] = $buycraft_language->get('language', 'listing_retrieved_successfully');
 		}
 
+		$result = Buycraft::updatePackages($server_key, $ch, $db);
+
+		if(!$result || isset($result->error_code)){
+			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_packages'));
+		} else {
+			$success[] = $buycraft_language->get('language', 'packages_retrieved_successfully');
+		}
+
 		$result = Buycraft::updatePayments($server_key, $ch, $db);
 		if(!$result || isset($result->error_code)){
 			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_payments'));

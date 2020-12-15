@@ -83,7 +83,7 @@ if(!$packages->count()){
 		$content = $emojione->unicodeToImage($content);
 		$content = Output::getPurified($content);
 
-		$image = (isset($package->image) && !is_null($package->image) ? (defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean(Output::getDecoded($package->image)) : null);
+		$image = (isset($package->image) && !is_null($package->image) ? Output::getClean(Output::getDecoded($package->image)) : null);
 
 		$category_packages[] = array(
 			'id' => Output::getClean($package->id),
