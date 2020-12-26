@@ -2,11 +2,11 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr5
+ *  NamelessMC version 2.0.0-pr8
  *
  *  License: MIT
  *
- *  Buycraft module file
+ *  Tebex module file
  */
 
 class Tebex_Module extends Module {
@@ -19,8 +19,8 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.0.3';
-		$nameless_version = '2.0.0-pr7';
+		$module_version = '1.1.0';
+		$nameless_version = '2.0.0-pr8';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
