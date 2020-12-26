@@ -62,6 +62,11 @@ if(isset($_POST) && !empty($_POST)){
 			else
 				$allow_guests = 0;
 
+            if(isset($_POST['home_tab']) && $_POST['home_tab'] == 'on')
+                $home_tab = 1;
+            else
+                $home_tab = 0;
+
 			try {
 				$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
 
@@ -99,6 +104,25 @@ if(isset($_POST) && !empty($_POST)){
 			} catch(Exception $e){
 				$errors[] = $e->getMessage();
 			}
+
+            try {
+                $home_tab_query = $queries->getWhere('buycraft_settings', array('name', '=', 'home_tab'));
+
+                if(count($home_tab_query)){
+                    $home_tab_query = $home_tab_query[0]->id;
+                    $queries->update('buycraft_settings', $home_tab_query, array(
+                        'value' => $home_tab
+                    ));
+                } else {
+                    $queries->create('buycraft_settings', array(
+                        'name' => 'home_tab',
+                        'value' => $home_tab
+                    ));
+                }
+
+            } catch(Exception $e){
+                $errors[] = $e->getMessage();
+            }
 
 			try {
 				$store_index_content = $queries->getWhere('buycraft_settings', array('name', '=', 'store_content'));
@@ -191,6 +215,13 @@ if(count($allow_guests))
 else
 	$allow_guests = 0;
 
+$home_tab = $queries->getWhere('buycraft_settings', array('name', '=', 'home_tab'));
+
+if(count($home_tab))
+    $home_tab = $home_tab[0]->value;
+else
+    $home_tab = 1;
+
 $store_index_content = $queries->getWhere('buycraft_settings', array('name', '=', 'store_content'));
 if(count($store_index_content)){
 	$store_index_content = Output::getClean(Output::getPurified(Output::getDecoded($store_index_content[0]->value)));
@@ -219,6 +250,8 @@ $smarty->assign(array(
 	'SERVER_KEY_VALUE' => $server_key,
 	'ALLOW_GUESTS' => $buycraft_language->get('language', 'allow_guests'),
 	'ALLOW_GUESTS_VALUE' => ($allow_guests == 1),
+	'HOME_TAB' => $buycraft_language->get('language', 'show_home_tab'),
+	'HOME_TAB_VALUE' => ($home_tab == 1),
 	'STORE_INDEX_CONTENT' => $buycraft_language->get('language', 'store_index_content'),
 	'STORE_INDEX_CONTENT_VALUE' => $store_index_content,
 	'STORE_PATH' => $buycraft_language->get('language', 'store_path'),

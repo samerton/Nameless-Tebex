@@ -33,6 +33,14 @@ if(!count($store_url)){
 	$store_url = Output::getClean($store_url[0]->value);
 }
 
+// Show home tab?
+$home_tab = $queries->getWhere('buycraft_settings', array('name', '=', 'home_tab'));
+
+if(count($home_tab))
+    $home_tab = $home_tab[0]->value;
+else
+    $home_tab = 1;
+
 $content = $queries->getWhere('buycraft_settings', array('name', '=', 'store_content'));
 $content = Output::getDecoded($content[0]->value);
 $content = $emojione->unicodeToImage($content);
@@ -63,10 +71,16 @@ if(count($categories_query)){
 	}
 }
 
+if ($home_tab == 0) {
+    Redirect::to($categories[current(array_keys($categories))]['url']);
+    die();
+}
+
 $smarty->assign(array(
 	'STORE' => $buycraft_language->get('language', 'store'),
 	'STORE_URL' => $store_url,
 	'VIEW_FULL_STORE' => $buycraft_language->get('language', 'view_full_store'),
+	'SHOW_HOME_TAB' => $home_tab,
 	'HOME' => $buycraft_language->get('language', 'home'),
 	'HOME_URL' => URL::build($buycraft_url),
 	'CATEGORIES' => $categories,

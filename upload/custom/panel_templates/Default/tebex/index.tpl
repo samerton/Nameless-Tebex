@@ -81,6 +81,11 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label for="inputHomeTab">{$HOME_TAB}</label>
+                                    <input type="checkbox" name="home_tab" id="inputHomeTab" class="js-switch" {if $HOME_TAB_VALUE} checked{/if} />
+                                </div>
+
+                                <div class="form-group">
                                     <label for="inputStorePath">{$STORE_PATH}</label>
                                     <input type="text" class="form-control" id="inputStorePath" name="store_path" placeholder="{$STORE_PATH}" value="{$STORE_PATH_VALUE}">
                                 </div>

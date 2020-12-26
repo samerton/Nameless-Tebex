@@ -10,9 +10,11 @@
         <div class="ui {if count($WIDGETS)}ten wide tablet twelve wide computer{else}sixteen wide{/if} column">
             <div class="ui padded segment">
                 <div class="ui top attached menu">
-                    <a class="item" href="{$HOME_URL}">
-                        {$HOME}
-                    </a>
+                    {if $SHOW_HOME_TAB eq '1'}
+                        <a class="item" href="{$HOME_URL}">
+                            {$HOME}
+                        </a>
+                    {/if}
                     {foreach from=$CATEGORIES item=category}
                         {if isset($category.subcategories) && count($category.subcategories)}
                             <div class="ui pointing dropdown link item">
