@@ -19,8 +19,8 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.1.0';
-		$nameless_version = '2.0.0-pr8';
+		$module_version = '1.1.1';
+		$nameless_version = '2.0.0-pr10';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
