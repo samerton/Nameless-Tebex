@@ -2,7 +2,7 @@
 Integrate your Nameless website with your Tebex store.
 
 ## Requirements
-- NamelessMC version 2 pre-release 9+
+- NamelessMC version 2 pre-release 10+
 - [Tebex](https://www.tebex.io/)
 
 ## Installation
