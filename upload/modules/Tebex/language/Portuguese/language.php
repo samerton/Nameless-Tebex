@@ -32,7 +32,7 @@ $language = array(
     'coupons' => 'Cupons',
     'gift_cards' => 'Cartões Presente',
     'server_key' => 'Chave do Servidor',
-    'server_key_info' => 'Essa é a chave secreta mostrada ao editar seu servidor <a href=&quot;https://server.tebex.io/settings/servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>aqui</a>', // &quot; = ", don't change
+    'server_key_info' => 'Essa é a chave secreta mostrada ao editar seu servidor <a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>aqui</a>', // &quot; = ", don't change
     'invalid_server_key' => 'Chave do Servidor inválida.',
     'store_content_max' => 'O índice de conteúdo da loja deve ser de no máximo 1.000.000 caracteres.',
     'store_path' => 'Caminho da Loja',
