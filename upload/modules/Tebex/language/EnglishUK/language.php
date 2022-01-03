@@ -35,7 +35,7 @@ $language = array(
     'coupons' => 'Coupons',
     'gift_cards' => 'Gift Cards',
     'server_key' => 'Server Key',
-    'server_key_info' => 'This is the secret key shown when editing your server <a href=&quot;https://server.tebex.io/settings/servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>here</a>', // &quot; = ", don't change
+    'server_key_info' => 'This is the secret key shown when editing your server <a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>here</a>', // &quot; = ", don't change
     'invalid_server_key' => 'Invalid server key.',
     'store_content_max' => 'The store index content must be a maximum of 1,000,000 characters.',
     'store_path' => 'Store Path',
