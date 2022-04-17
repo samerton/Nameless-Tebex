@@ -117,10 +117,10 @@ class Tebex_Module extends Module {
 		}
 
 		$cache->setCache('navbar_icons');
-		if(!$cache->isCached('buycraft_icon'))
+		if(!$cache->isCached('tebex_icon'))
 			$icon = '';
 		else
-			$icon = $cache->retrieve('buycraft_icon');
+			$icon = $cache->retrieve('tebex_icon');
 
 		$cache->setCache('buycraft_settings');
 		if($cache->isCached('navbar_position'))
