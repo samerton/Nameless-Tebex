@@ -16,7 +16,7 @@ define('PAGE', 'buycraft');
 $category_id = explode('/', $route);
 $category_id = $category_id[count($category_id) - 1];
 
-if(!isset($category_id[count($category_id) - 1])){
+if(!$category_id){
 	require_once(ROOT_PATH . '/404.php');
 	die();
 }
