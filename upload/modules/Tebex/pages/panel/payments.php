@@ -170,11 +170,11 @@ if(isset($_GET['user'])){
 	if($payments->count()){
 		$payments = $payments->results();
 
-		$payment_user = $queries->getWhere('users', array('uuid', '=', $_GET['user']));
+		$payment_user = new User($_GET['user'], 'uuid');
 
-		if(count($payment_user)){
-			$avatar = $user->getAvatar($payment_user[0]->id);
-			$style = $user->getGroupClass($payment_user[0]->id);
+		if ($payment_user->exists()) {
+			$avatar = $payment_user->getAvatar();
+			$style = $payment_user->getGroupClass();
 
 		} else {
 			$avatar = Util::getAvatarFromUUID(Output::getClean($_GET['user']));
@@ -259,11 +259,11 @@ if(isset($_GET['user'])){
 		die();
 	}
 
-	$payment_user = $queries->getWhere('users', array('uuid', '=', Output::getClean($payment->player_uuid)));
+	$payment_user = new User($payment->player_uuid, 'uuid');
 
-	if(count($payment_user)){
-		$avatar = $user->getAvatar($payment_user[0]->id);
-		$style = $user->getGroupClass($payment_user[0]->id);
+	if ($payment_user->exists()) {
+		$avatar = $payment_user->getAvatar();
+		$style = $payment_user->getGroupClass();
 
 	} else {
 		$avatar = Util::getAvatarFromUUID(Output::getClean($payment->player_uuid));
@@ -459,20 +459,25 @@ if(isset($_GET['user'])){
 } else {
 	$payments = $queries->orderAll('buycraft_payments', 'date', 'DESC');
 
-	if(count($payments)){
-		$template_payments = array();
+	if (count($payments)) {
+		$template_payments = [];
+		$payment_users = [];
 
-		foreach($payments as $payment){
-			$payment_user = $queries->getWhere('users', array('uuid', '=', $payment->player_uuid));
-
-			if(count($payment_user)){
-				$avatar = $user->getAvatar($payment_user[0]->id);
-				$style = $user->getGroupClass($payment_user[0]->id);
-
+		foreach ($payments as $payment) {
+			if (isset($payment_users[$payment->player_uuid])) {
+				[$avatar, $style] = $payment_users[$payment->player_uuid];
 			} else {
-				$avatar = Util::getAvatarFromUUID(Output::getClean($payment->player_uuid));
-				$style = '';
+				$payment_user = new User($payment->player_uuid, 'uuid');
 
+				if ($payment_user->exists()) {
+					$avatar = $payment_user->getAvatar();
+					$style = $payment_user->getGroupClass();
+				} else {
+					$avatar = Util::getAvatarFromUUID(Output::getClean($payment->player_uuid));
+					$style = '';
+				}
+
+				$payment_users[$payment->player_uuid] = [$avatar, $style];
 			}
 
 			$template_payments[] = array(

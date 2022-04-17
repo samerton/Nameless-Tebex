@@ -50,21 +50,28 @@ class LatestPurchasesWidget extends WidgetBase {
 			$latest_purchases_query = $queries->orderAll('buycraft_payments', '`date`', 'DESC LIMIT ' . $purchase_limit);
 			$latest_purchases = array();
 
-			if(count($latest_purchases_query)){
+			if (count($latest_purchases_query)) {
 				$timeago = new Timeago(TIMEZONE);
+				$purchase_users = [];
 
-				foreach($latest_purchases_query as $purchase){
-					$user_query = $queries->getWhere('users', array('uuid', '=', $purchase->player_uuid));
-					if(count($user_query)){
-						$user_query = $user_query[0];
-						$user_id = Output::getClean($user_query->id);
-						$style = $this->_user->getGroupClass($user_query->id);
-						$username = Output::getClean($user_query->username);
-					} else {
-						$user_id = 0;
-						$style = null;
-						$username = Output::getClean($purchase->player_name);
-					}
+				foreach ($latest_purchases_query as $purchase) {
+                    if (isset($purchase_users[$purchase->player_uuid])) {
+                        [$user_id, $style, $username] = $purchase_users[$purchase->player_uuid];
+                    } else {
+                        // TODO: user integrations support for pr13
+                        $purchase_user = new User($purchase->player_uuid, 'uuid');
+                        if ($purchase_user->exists()) {
+                            $user_id = Output::getClean($purchase_user->data()->id);
+                            $style = $purchase_user->getGroupClass();
+                            $username = $purchase_user->getDisplayName();
+                        } else {
+                            $user_id = 0;
+                            $style = null;
+                            $username = Output::getClean($purchase->player_name);
+                        }
+
+                        $purchase_users[$purchase->player_uuid] = [$user_id, $style, $username];
+                    }
 
 					$latest_purchases[] = array(
 						'avatar' => Util::getAvatarFromUUID(Output::getClean($purchase->player_uuid), 64),

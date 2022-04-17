@@ -19,8 +19,8 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.1.1';
-		$nameless_version = '2.0.0-pr10';
+		$module_version = '1.1.2';
+		$nameless_version = '2.0.0-pr12';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
@@ -33,7 +33,7 @@ class Tebex_Module extends Module {
 		}
 
 		// Pages
-		$pages->add('Tebex', $this->_buycraft_url, 'pages/store/index.php', 'buycraft', true);
+		$pages->add('Tebex', $this->_buycraft_url, 'pages/store/index.php', 'tebex', true);
 		$pages->add('Tebex', $this->_buycraft_url . '/category', 'pages/store/category.php', 'package', true);
 		$pages->add('Tebex', '/panel/tebex', 'pages/panel/index.php');
 		$pages->add('Tebex', '/panel/tebex/bans', 'pages/panel/bans.php');
@@ -128,7 +128,7 @@ class Tebex_Module extends Module {
 		else
 			$navbar_pos = 'top';
 
-		$navs[0]->add('buycraft', $this->_buycraft_language->get('language', 'store'), URL::build($this->_buycraft_url), $navbar_pos, null, $buycraft_order, $icon);
+		$navs[0]->add('tebex', $this->_buycraft_language->get('language', 'store'), URL::build($this->_buycraft_url), $navbar_pos, null, $buycraft_order, $icon);
 
 		if(defined('BACK_END')){
 			if($user->hasPermission('admincp.buycraft')){

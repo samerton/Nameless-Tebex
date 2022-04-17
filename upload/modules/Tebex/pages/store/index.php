@@ -10,7 +10,7 @@
  */
 
 // Always define page name
-define('PAGE', 'buycraft');
+define('PAGE', 'tebex');
 $page_title = $buycraft_language->get('language', 'store');
 require_once(ROOT_PATH . '/core/templates/frontend_init.php');
 
