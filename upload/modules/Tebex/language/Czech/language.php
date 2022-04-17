@@ -35,7 +35,7 @@ $language = array(
     'coupons' => 'Kupóny',
     'gift_cards' => 'Dárkové karty',
     'server_key' => 'Klíč serveru',
-    'server_key_info' => 'Toto je tajný klíč zobrazený při úpravě vašeho serveru <a href=&quot;https://server.tebex.io/settings/servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>zde</a>', // &quot; = ", don't change
+    'server_key_info' => 'Toto je tajný klíč zobrazený při úpravě vašeho serveru <a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>zde</a>', // &quot; = ", don't change
     'invalid_server_key' => 'Neplatný klíč serveru.',
     'store_content_max' => 'Obsah hlavní stránky obchodu může obsahovat maximálně 1 000 000 znaků.',
     'store_path' => 'Cesta k obchodu',
