@@ -19,7 +19,7 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.1.3';
+		$module_version = '1.1.4';
 		$nameless_version = '2.0.0-pr12';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
@@ -109,11 +109,11 @@ class Tebex_Module extends Module {
 
 		// Add link to navbar
 		$cache->setCache('navbar_order');
-		if(!$cache->isCached('buycraft_order')){
+		if(!$cache->isCached('tebex_order')){
 			$buycraft_order = 10;
-			$cache->store('buycraft_order', 10);
+			$cache->store('tebex_order', 10);
 		} else {
-			$buycraft_order = $cache->retrieve('buycraft_order');
+			$buycraft_order = $cache->retrieve('tebex_order');
 		}
 
 		$cache->setCache('navbar_icons');
