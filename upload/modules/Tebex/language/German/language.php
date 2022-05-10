@@ -1,7 +1,7 @@
 <?php
 /*
  *	Made by Samerton
- *  Translation by enno123
+ *  Translation by enno123 & Justman10000
  *  https://github.com/samerton
  *  NamelessMC version 2.0.0-pr5
  *
@@ -19,10 +19,10 @@ $language = array(
      */
     'store' => 'Store',
     'buycraft' => 'Tebex',
-    'home' => 'Home',
-    'view_full_store' => 'View full store',
+    'home' => 'Startseite',
+    'view_full_store' => 'Gesamten Store ansehen',
     'buy' => 'Kaufen',
-    'sale' => 'Sale',
+    'sale' => 'Verkaufen',
 
     /*
      *  Admin terms
@@ -32,24 +32,24 @@ $language = array(
     'categories' => 'Kategorien',
     'packages' => 'Pakete',
     'payments' => 'Zahlungen',
-    'bans' => 'Bans',
+    'bans' => 'Sperren',
     'coupons' => 'Coupons',
-    'gift_cards' => 'Gift Cards',
+    'gift_cards' => 'Geschenkkarten',
     'server_key' => 'Server Key',
     'server_key_info' => 'Dies ist der Secret Key, der beim Bearbeiten deines Servers <a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>hier</a> angezeigt wird', // &quot; = ", don't change
     'invalid_server_key' => 'Ungültiger server key.',
     'store_content_max' => 'Der Inhalt des Store Indexes darf maximal 1.000.000 Zeichen lang sein.',
     'store_path' => 'Store Path',
     'store_index_content' => 'Store Index Content',
-    'allow_guests' => 'Erlauben Sie den Gästen, den Laden zu besichtigen?',
-    'show_home_tab' => 'Registerkarte "Home" anzeigen?',
+    'allow_guests' => 'Den Gästen erlauben, den Laden zu besichtigen?',
+    'show_home_tab' => 'Registerkarte "Startseite" anzeigen?',
     'updated_successfully' => 'Erfolgreich aktualisiert.',
-    'no_categories' => 'Es wurden keine Kategorien gefunden! Stellen Sie sicher, dass Sie Ihren Shop zuerst synchronisiert haben.',
-    'no_packages' => 'Es wurden keine Pakete gefunden! Stellen Sie sicher, dass Sie Ihren Shop zuerst synchronisiert haben.',
+    'no_categories' => 'Es wurden keine Kategorien gefunden! Stelle sicher, dass Du Deinen Shop zuerst synchronisiert hast.',
+    'no_packages' => 'Es wurden keine Pakete gefunden! Stelle sicher, dass Du Deinen Shop zuerst synchronisiert hast.',
     'no_payments' => 'Es wurden keine Zahlungen gefunden!',
-    'no_bans' => 'Es wurden keine Bans gefunden!',
+    'no_bans' => 'Es wurden keine Sperren gefunden!',
     'no_coupons' => 'Es wurden keine Coupons gefunden!',
-    'no_gift_cards' => 'Es wurden keine Gift Cards gefunden!',
+    'no_gift_cards' => 'Es wurden keine Geschenkkarten gefunden!',
     'no_subcategories' => 'Keine Unterkategorien.',
     'editing_category_x' => 'Bearbeitung der Kategorie {x}', // Don't replace {x}
     'category_description' => 'Kategorie Beschreibung',
@@ -63,7 +63,7 @@ $language = array(
     'editing_package_x' => 'Bearbeitung des Pakets {x}', // Don't replace {x}
     'package_description' => 'Paket Beschreibung',
     'package_image' => 'Paket Bild',
-    'user' => 'User',
+    'user' => 'Benutzer',
     'amount' => 'Betrag',
     'date' => 'Datum',
     'view' => 'Anzeigen',
@@ -74,19 +74,19 @@ $language = array(
     'uuid' => 'UUID',
     'please_enter_valid_ign_package' => 'Bitte gib einen gültigen Ingame-Username ein und wähle ein Paket.',
     'price' => 'Price',
-    'please_enter_valid_price' => 'Bitte geben Sie einen gültigen Preis ein.',
+    'please_enter_valid_price' => 'Bitte gebe einen gültigen Preis ein.',
     'payment_created_successfully' => 'Zahlung erfolgreich erstellt.',
     'viewing_payment' => 'Ansicht der Zahlung {x}', // Don't replace {x}
 	'pending_commands' => 'Ausstehende Befehle',
     'no_pending_commands' => 'Keine ausstehenden Befehle.',
     'reason' => 'Grund',
-    'email' => 'Email',
+    'email' => 'E-Mail',
     'must_enter_uuid' => 'Du musst eine UUID eingeben!',
-    'ban_created_successfully' => 'Ban erfolgreich erstellt.',
-    'creating_ban' => 'Ban erstellen',
+    'ban_created_successfully' => 'Sperre erfolgreich erstellt.',
+    'creating_ban' => 'Sperre erstellen',
     'ip_address' => 'IP Addresse',
     'optional' => 'Optional',
-    'viewing_ban_x' => 'Ban einsehen {x}', // Don't replace {x}
+    'viewing_ban_x' => 'Sperre einsehen {x}', // Don't replace {x}
 	'remove_ban_in_buycraft' => 'Du kannst dieses Verbot im Tebex-Kontrollzentrum aufheben.',
     'creating_coupon' => 'Coupon erstellen',
     'coupon_code' => 'Coupon Code',
@@ -105,7 +105,7 @@ $language = array(
     'percentage' => 'Prozentsatz',
     'unlimited_usage' => 'Unbegrenzte Nutzung',
     'uses' => 'Verwendet',
-    'never_expire' => 'Niemals ablaufen',
+    'never_expire' => 'Läuft niemals ab',
     'never' => 'Niemals',
     'expiry_date' => 'Ablaufdatum (jjjj-mm-tt)',
     'start_date' => 'Startdatum (jjjj-mm-tt)',
@@ -127,19 +127,19 @@ $language = array(
     'viewing_coupon_x' => 'Coupon ansehen {x}', // Don't replace {x}
 	'edit_coupon_in_buycraft' => 'Du kannst diesen Coupon im Tebex-Kontrollzentrum bearbeiten.',
     'creating_gift_card' => 'Gift Card erstellen',
-    'gift_card_value_required' => 'Sie müssen einen Gift Card Wert eingeben!',
+    'gift_card_value_required' => 'Du musst einen Gift Card Wert eingeben!',
     'gift_card_value' => 'Wert',
     'gift_card_note' => 'Hinweis',
-    'gift_card_created_successfully' => 'Gift card erfolgreich erstellt.',
-    'gift_card_created_successfully_with_code' => 'Gift card mit Code <strong>{x}</strong> erfolgreich erstellt.', // Don't replace {x}
-    'gift_card_updated_successfully' => 'Gift card erfolgreich aktualisiert.',
-    'gift_card_voided_successfully' => 'Die Gift card wurde erfolgreich entwertet.',
+    'gift_card_created_successfully' => 'Geschenkkarte erfolgreich erstellt.',
+    'gift_card_created_successfully_with_code' => 'Geschenkkarte mit Code <strong>{x}</strong> erfolgreich erstellt.', // Don't replace {x}
+    'gift_card_updated_successfully' => 'Geschenkkarte erfolgreich aktualisiert.',
+    'gift_card_voided_successfully' => 'Die Geschenkkarte wurde erfolgreich entwertet.',
     'gift_card_code' => 'Code',
     'gift_card_start_balance' => 'Startguthaben',
     'gift_card_balance_remaining' => 'Verbleibender Saldo',
     'gift_card_active' => 'Aktiv',
-    'viewing_gift_card_x' => 'Gift card ansehen {x}',
-    'add_credit' => 'Guthaben zur Gift card hinzufügen',
+    'viewing_gift_card_x' => 'Geschenkkarte ansehen {x}',
+    'add_credit' => 'Guthaben zur Geschenkkarte hinzufügen',
     'credit' => 'Kredit',
     'credit_required' => 'Die Höhe des hinzuzufügenden Guthabens ist erforderlich!',
     'void_gift_card' => 'Ungültige Geschenkkarte',
@@ -152,11 +152,11 @@ $language = array(
     'update_category' => 'Kategorie aktualisieren',
     'update_package' => 'Paket aktualisieren',
     'new_payment' => 'Neue Zahlung',
-    'new_gift_card' => 'Neue Gift card',
-    'update_gift_card' => 'Gift card aktualisieren',
+    'new_gift_card' => 'Neue Geschenkkarte',
+    'update_gift_card' => 'Geschenkkarte aktualisieren',
     'new_coupon' => 'Neuer Coupon',
     'delete_coupon' => 'Coupon löschen',
-    'new_ban' => 'Neuer Ban',
+    'new_ban' => 'Neue Sperre',
 
     /*
      *  Admin force sync
@@ -175,15 +175,15 @@ $language = array(
     'gift_cards_retrieved_successfully' => 'Gift cards erfolgreich abgerufen',
     'unable_to_get_coupons' => 'Es ist nicht möglich, Coupons von Tebex zu erhalten: {x}', // Don't replace {x} (error code)
     'coupons_retrieved_successfully' => 'Coupons erfolgreich abgerufen',
-    'unable_to_get_bans' => 'Kann keine Bans von Tebex erhalten: {x}', // Don't replace {x} (error code)
-    'bans_retrieved_successfully' => 'Bans erfolgreich abgerufen',
+    'unable_to_get_bans' => 'Kann keine Sperren von Tebex erhalten: {x}', // Don't replace {x} (error code)
+    'bans_retrieved_successfully' => 'Sperren erfolgreich abgerufen',
 
 	/*
 	 *  Hooks
 	 */
 	'purchase_hook_info' => 'Kauf eines neuen Produkts',
 	'new_coupon_hook_info' => 'Store-Coupon erstellt',
-	'new_gift_card_hook_info' => 'Gift card für den Store erstellt',
+	'new_gift_card_hook_info' => 'Geschenkkarte für den Store erstellt',
 
 	/*
 	 *  Widgets
@@ -195,5 +195,4 @@ $language = array(
 	'featured_package' => 'Ausgezeichnetes Paket',
 	'featured_packages' => 'Ausgezeichnete Packages',
 	'featured_packages_info' => 'Ein Paket wird nach dem Zufallsprinzip aus allen ausgewählten Paketen ausgewählt',
-
 );
