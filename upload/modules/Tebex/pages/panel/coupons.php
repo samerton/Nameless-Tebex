@@ -2,71 +2,57 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
  *  Tebex integration for NamelessMC - coupons
  */
 
-// Can the user view the AdminCP?
-if($user->isLoggedIn()){
-	if(!$user->canViewStaffCP()){
-		// No
-		Redirect::to(URL::build('/'));
-		die();
-	} else {
-		// Check the user has re-authenticated
-		if(!$user->isAdmLoggedIn()){
-			// They haven't, do so now
-			Redirect::to(URL::build('/panel/auth'));
-			die();
-		} else {
-			if(!$user->hasPermission('admincp.buycraft.coupons')){
-				Redirect::to(URL::build('/panel'));
-				die();
-			}
-		}
-	}
-} else {
-	// Not logged in
-	Redirect::to(URL::build('/login'));
-	die();
+if (!$user->handlePanelPageLoad('admincp.buycraft.coupons')) {
+    require_once ROOT_PATH . '/403.php';
+    die();
 }
 
 define('PAGE', 'panel');
 define('PARENT_PAGE', 'buycraft');
 define('PANEL_PAGE', 'buycraft_coupons');
 $page_title = $buycraft_language->get('language', 'coupons');
-require_once(ROOT_PATH . '/core/templates/backend_init.php');
-require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
+require_once ROOT_PATH . '/core/templates/backend_init.php' ;
+require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
 
-if(isset($_GET['action'])){
-	if($_GET['action'] == 'new'){
-		if(!$user->hasPermission('admincp.buycraft.coupons.new')){
+if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'new') {
+		if (!$user->hasPermission('admincp.buycraft.coupons.new')) {
 			Redirect::to(URL::build('/panel/tebex/coupons'));
-			die();
 		}
 
 		// New coupon
-		if(Input::exists()){
-			$errors = array();
+		if (Input::exists()) {
+			$errors = [];
 
-			if(Token::check(Input::get('token'))){
-				$validate = new Validate();
-				$validation = $validate->check($_POST, array(
-					'code' => array(
-						'required' => true,
-						'alphanumeric' => true
-					),
-					'note' => array(
-						'required' => true,
-					)
-				));
+			if (Token::check(Input::get('token'))) {
+				$validation = Validate::check($_POST, [
+					'code' => [
+						Validate::REQUIRED => true,
+						Validate::ALPHANUMERIC => true,
+					],
+					'note' => [
+						Validate::REQUIRED => true,
+					],
+				])->messages([
+                    'code' => [
+                        Validate::REQUIRED => $buycraft_language->get('language', 'coupon_code_required'),
+                        Validate::ALPHANUMERIC => $buycraft_language->get('language', 'coupon_code_alphanumeric'),
+                    ],
+                    'note' => [
+                        Validate::REQUIRED => $buycraft_language->get('language', 'coupon_note_required'),
+                    ]
+                ]);
 
-				if($validation->passed()){
-					if(isset($_POST['expire_date']) && !empty($_POST['expire_date'])){
-						if(Util::validateDate($_POST['expire_date'], 'Y-m-d')){
+				if ($validation->passed()) {
+					if (isset($_POST['expire_date']) && !empty($_POST['expire_date'])) {
+						if (Buycraft::validateDate($_POST['expire_date'], 'Y-m-d')) {
 							$expire_date = $_POST['expire_date'];
 						} else {
 							$errors[] = $buycraft_language->get('language', 'invalid_expire_date');
@@ -75,8 +61,8 @@ if(isset($_GET['action'])){
 						$expire_date = '-0001-11-30';
 					}
 
-					if(isset($_POST['start_date']) && !empty($_POST['start_date'])){
-						if(Util::validateDate($_POST['start_date'], 'Y-m-d')){
+					if (isset($_POST['start_date']) && !empty($_POST['start_date'])) {
+						if (Buycraft::validateDate($_POST['start_date'], 'Y-m-d')) {
 							$start_date = $_POST['start_date'];
 						} else {
 							$errors[] = $buycraft_language->get('language', 'invalid_start_date');
@@ -85,85 +71,76 @@ if(isset($_GET['action'])){
 						$start_date = date('Y-m-d');
 					}
 
-					if(!count($errors)){
+					if (!count($errors)) {
 						// Create coupon
 						$post_object = new stdClass();
 
-						if(isset($_POST['basket_type'])){
-							switch($_POST['basket_type']){
+						if (isset($_POST['basket_type'])) {
+							switch ($_POST['basket_type']) {
 								case 2:
 									$post_object->basket_type = 'single';
-
 									break;
 
 								case 3:
 									$post_object->basket_type = 'subscription';
-
 									break;
 
 								default:
 									$post_object->basket_type = 'both';
-
 									break;
 							}
 						} else {
 							$post_object->basket_type = 'both';
 						}
 
-						if(isset($_POST['minimum'])){
+						if (isset($_POST['minimum'])) {
 							$post_object->minimum = $_POST['minimum'] + 0;
 						} else {
 							$post_object->minimum = 0;
 						}
 
-						if(isset($_POST['discount_application_method'])){
-							switch($_POST['discount_application_method']){
+						if (isset($_POST['discount_application_method'])) {
+							switch ($_POST['discount_application_method']) {
 								case 2:
 									$post_object->discount_application_method = 1;
-
 									break;
 
 								case 3:
 									$post_object->discount_application_method = 2;
-
 									break;
 
 								default:
 									$post_object->discount_application_method = 0;
-
 									break;
 							}
 						} else {
 							$post_object->discount_application_method = 0;
 						}
 
-						if(isset($_POST['username']) && !empty($_POST['username'])){
+						if (isset($_POST['username']) && !empty($_POST['username'])) {
 							$post_object->username = Output::getClean($_POST['username']);
 						}
 
-						if(isset($_POST['effective_on'])){
-							switch($_POST['effective_on']){
+						if (isset($_POST['effective_on'])) {
+							switch ($_POST['effective_on']) {
 								case 2:
 									$post_object->effective_on = 'package';
-
 									break;
 
 								case 3:
 									$post_object->effective_on = 'category';
-
 									break;
 
 								default:
 									$post_object->effective_on = 'cart';
-
 									break;
 							}
 						} else
 							$post_object->effective_on = 'cart';
 
-						if(isset($_POST['packages']) && is_array($_POST['packages'])){
+						if (isset($_POST['packages']) && is_array($_POST['packages'])) {
 							$packages = array();
-							foreach($_POST['packages'] as $package){
+							foreach ($_POST['packages'] as $package) {
 								$packages[] = $package + 0;
 							}
 							$post_object->packages = $packages;
@@ -171,9 +148,9 @@ if(isset($_GET['action'])){
 							$post_object->packages = array();
 						}
 
-						if(isset($_POST['categories']) && is_array($_POST['categories'])){
+						if (isset($_POST['categories']) && is_array($_POST['categories'])) {
 							$categories = array();
-							foreach($_POST['categories'] as $category){
+							foreach ($_POST['categories'] as $category) {
 								$categories[] = $category + 0;
 							}
 							$post_object->categories = $categories;
@@ -181,8 +158,8 @@ if(isset($_GET['action'])){
 							$post_object->categories = array();
 						}
 
-						if(isset($_POST['discount_type'])){
-							if($_POST['discount_type'] == 'percentage'){
+						if (isset($_POST['discount_type'])) {
+							if ($_POST['discount_type'] == 'percentage') {
 								$post_object->discount_type = 'percentage';
 							} else {
 								$post_object->discount_type = 'value';
@@ -191,31 +168,31 @@ if(isset($_GET['action'])){
 							$post_object->discount_type = 'value';
 						}
 
-						if(isset($_POST['discount_amount'])){
+						if (isset($_POST['discount_amount'])) {
 							$post_object->discount_amount = $_POST['discount_amount'] + 0;
 						} else {
 							$post_object->discount_amount = 0;
 						}
 
-						if(isset($_POST['discount_percentage'])){
+						if (isset($_POST['discount_percentage'])) {
 							$post_object->discount_percentage = $_POST['discount_percentage'] + 0;
 						} else {
 							$post_object->discount_percentage = 0;
 						}
 
-						if(isset($_POST['redeem_unlimited']) && $_POST['redeem_unlimited'] == 'on'){
+						if (isset($_POST['redeem_unlimited']) && $_POST['redeem_unlimited'] == 'on') {
 							$post_object->redeem_unlimited = 'true';
 						} else {
 							$post_object->redeem_unlimited = 'false';
 						}
 
-						if(isset($_POST['expire_never']) && $_POST['expire_never'] == 'on'){
+						if (isset($_POST['expire_never']) && $_POST['expire_never'] == 'on') {
 							$post_object->expire_never = 'true';
 						} else {
 							$post_object->expire_never = 'false';
 						}
 
-						if(isset($_POST['expire_limit'])){
+						if (isset($_POST['expire_limit'])) {
 							$post_object->expire_limit = $_POST['expire_limit'] + 0;
 						} else {
 							$post_object->expire_limit = 0;
@@ -230,50 +207,30 @@ if(isset($_GET['action'])){
 
 						// POST to Buycraft
 						// Get server key
-						$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+						$server_key = DB::getInstance()->get('buycraft_settings', array('name', '=', 'server_key'));
 
-						if(count($server_key))
-							$server_key = $server_key[0]->value;
+						if ($server_key->count())
+							$server_key = $server_key->first()->value;
 						else
 							$server_key = null;
 
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/coupons');
-						curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-						curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+                        $result = HttpClient::post('https://plugin.tebex.io/coupons', $json, [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'X-Tebex-Secret' => $server_key
+                            ]
+                        ]);
 
-						$ch_result = curl_exec($ch);
-
-						$result = json_decode($ch_result);
-
-						curl_close($ch);
-
-						if(isset($result->error_code)){
-							$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
+						if ($result->hasError()) {
+							$errors[] = Output::getClean($result->getError());
 						} else {
-							Buycraft::updateCoupons($server_key, null, DB::getInstance());
+							Buycraft::updateCoupons($server_key, DB::getInstance());
 							Session::flash('new_coupon_success', $buycraft_language->get('language', 'coupon_created_successfully'));
 							Redirect::to(URL::build('/panel/tebex/coupons'));
-							die();
 						}
-
 					}
-
 				} else {
-					foreach($validation->errors() as $error){
-						if(strpos($error, 'alphanumeric') !== false){
-							$errors[] = $buycraft_language->get('language', 'coupon_code_alphanumeric');
-						} else {
-							// required
-							if(strpos($error, 'code') !== false){
-								$errors[] = $buycraft_language->get('language', 'coupon_code_required');
-							} else {
-								$errors[] = $buycraft_language->get('language', 'coupon_note_required');
-							}
-						}
-					}
+					$errors = $validation->errors();
 				}
 
 			} else
@@ -284,20 +241,20 @@ if(isset($_GET['action'])){
 }
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets);
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
-if(Session::exists('new_coupon_success')){
+if (Session::exists('new_coupon_success')) {
 	$success = Session::flash('new_coupon_success');
 }
 
-if(isset($_GET['action'])){
-	if($_GET['action'] == 'new'){
+if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'new') {
 		// Get variables
-		$packages = $queries->orderAll('buycraft_packages', '`order`', 'ASC');
-		$categories= $queries->orderAll('buycraft_categories', '`order`', 'ASC');
-		$currency = $queries->getWhere('buycraft_settings', array('name', '=', 'currency_symbol'));
-		if(count($currency))
-			$currency = Output::getPurified($currency[0]->value);
+        $packages = DB::getInstance()->query('SELECT * FROM nl2_buycraft_packages ORDER BY `order` ASC')->results();
+        $categories = DB::getInstance()->query('SELECT * FROM nl2_buycraft_categories ORDER BY `order` ASC')->results();
+        $currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		if ($currency->count())
+			$currency = Output::getPurified($currency->first()->value);
 		else
 			$currency = '';
 
@@ -356,21 +313,7 @@ if(isset($_GET['action'])){
 			'OPTIONAL' => $buycraft_language->get('language', 'optional')
 		));
 
-		$template->addCSSFiles(array(
-			(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/switchery/switchery.min.css' => array()
-		));
-
-		$template->addJSFiles(array(
-			(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/switchery/switchery.min.js' => array()
-		));
-
 		$template->addJSScript('
-			var elems = Array.prototype.slice.call(document.querySelectorAll(\'.js-switch\'));
-	
-			elems.forEach(function(html) {
-			  var switchery = new Switchery(html, {color: \'#23923d\', secondaryColor: \'#e56464\'});
-			});
-
 			$(document).ready(function(){
                 $(\'#effectiveOnPackages\').hide();
                 $(\'#effectiveOnCategories\').hide();
@@ -421,94 +364,89 @@ if(isset($_GET['action'])){
 
 		$template_file = 'tebex/coupons_new.tpl';
 
-	} else if($_GET['action'] == 'view'){
+	} else if ($_GET['action'] == 'view') {
 		// Get coupon
-		if(!isset($_GET['id']) || !is_numeric($_GET['id'])){
+		if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 			Redirect::to(URL::build('/panel/tebex/coupons'));
-			die();
 		}
 
-		$coupon = $queries->getWhere('buycraft_coupons', array('id', '=', $_GET['id']));
-		if(!count($coupon)){
+		$coupon = DB::getInstance()->get('buycraft_coupons', ['id', '=', $_GET['id']]);
+		if (!$coupon->count()) {
 			Redirect::to(URL::build('/panel/tebex/coupons'));
-			die();
 		} else
-			$coupon = $coupon[0];
+			$coupon = $coupon->first();
 
-		if(Input::exists() && isset($_POST['action']) && $_POST['action'] == 'delete' && $user->hasPermission('admincp.buycraft.coupons.delete')) {
-			if(isset($_GET['id']) && is_numeric($_GET['id'])) {
-				if(!Token::check(Input::get('token'))) {
-					$errors = array($language->get('general', 'invalid_token'));
+		if (Input::exists() && isset($_POST['action']) && $_POST['action'] == 'delete' && $user->hasPermission('admincp.buycraft.coupons.delete')) {
+			if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+				if (!Token::check(Input::get('token'))) {
+					$errors = [$language->get('general', 'invalid_token')];
 				} else {
 					try {
 						// DELETE request
 						// Get server key
-						$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+						$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-						if(count($server_key))
-							$server_key = $server_key[0]->value;
+						if ($server_key->count())
+							$server_key = $server_key->first()->value;
 						else
 							$server_key = null;
 
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/coupons/' . $coupon->id);
-						curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-						curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+                        // TODO: convert to HttpClient::delete when available
+                        $client = HttpClient::createClient([
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'X-Tebex-Secret' => $server_key
+                            ]
+                        ]);
 
-						$ch_result = curl_exec($ch);
+                        try {
+                            $response = $client->delete('https://plugin.tebex.io/coupons/' . $coupon->id);
 
-						$result = json_decode($ch_result);
-
-						curl_close($ch);
-
-						if(isset($result->error_code)){
-							$errors = array(Output::getClean($result->error_code . ': ' . $result->error_message));
-						} else {
-							$queries->delete('buycraft_coupons', array('id', '=', $coupon->id));
-							Session::flash('new_coupon_success', $buycraft_language->get('language', 'coupon_deleted_successfully'));
-							Redirect::to(URL::build('/panel/tebex/coupons'));
-							die();
-						}
+                            DB::getInstance()->delete('buycraft_coupons', ['id', '=', $coupon->id]);
+                            Session::flash('new_coupon_success', $buycraft_language->get('language', 'coupon_deleted_successfully'));
+                            Redirect::to(URL::build('/panel/tebex/coupons'));
+                        } catch (\GuzzleHttp\Exception\GuzzleException $exception) {
+                            $errors = [Output::getClean($exception->getMessage())];
+                            Log::getInstance()->log(Log::Action('misc/curl_error'), $exception->getMessage());
+                        }
 					} catch(Exception $e){
-						$errors = array($e->getMessage());
+						$errors = [$e->getMessage()];
 					}
 				}
 			}
 		}
 
 		// Currency
-		$currency = $queries->getWhere('buycraft_settings', array('name', '=', 'currency_symbol'));
-		if(!count($currency))
+		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		if (!$currency->count())
 			$currency = '';
 		else
-			$currency = Output::getPurified($currency[0]->value);
+			$currency = Output::getPurified($currency->first()->value);
 
 		// Get packages
-		$packages = $queries->orderAll('buycraft_packages', '`order`', 'ASC');
+		$packages = DB::getInstance()->query('SELECT * FROM nl2_buycraft_packages ORDER BY `order` ASC')->results();
 		$effective_packages = json_decode($coupon->effective_packages, true);
-		$template_packages = array();
+		$template_packages = [];
 
-		foreach($packages as $package){
-			if(in_array($package->id, $effective_packages)){
+		foreach ($packages as $package) {
+			if (in_array($package->id, $effective_packages)) {
 				$template_packages[] = Output::getClean($package->name);
 			}
 		}
 
 		// Get categories
-		$categories = $queries->orderAll('buycraft_categories', '`order`', 'ASC');
+        $categories = DB::getInstance()->query('SELECT * FROM nl2_buycraft_categories ORDER BY `order` ASC')->results();
 		$effective_categories = json_decode($coupon->effective_categories, true);
-		$template_categories = array();
+		$template_categories = [];
 
-		foreach($categories as $category){
-			if(in_array($category->id, $effective_categories)){
+		foreach ($categories as $category) {
+			if (in_array($category->id, $effective_categories)) {
 				$template_categories[] = Output::getClean($category->name);
 			}
 		}
 
 		// Basket type
-		switch($coupon->basket_type){
+		switch ($coupon->basket_type) {
 			case 'single':
 				$basket_type = $buycraft_language->get('language', 'one_off_purchases');
 				break;
@@ -547,9 +485,9 @@ if(isset($_GET['action'])){
 			'DISCOUNT_VALUE' => sprintf('%0.2f', $coupon->discount_value),
 			'DISCOUNT_PERCENTAGE' => Output::getClean($coupon->discount_percentage),
 			'START_DATE' => $buycraft_language->get('language', 'start_date'),
-			'START_DATE_VALUE' => date('Y-m-d', $coupon->start_date),
+			'START_DATE_VALUE' => date(DATE_FORMAT, $coupon->start_date),
 			'END_DATE' => $buycraft_language->get('language', 'expiry_date'),
-			'END_DATE_VALUE' => $coupon->expires ? date('Y-m-d', $coupon->date) : $buycraft_language->get('language', 'never'),
+			'END_DATE_VALUE' => $coupon->expires ? date(DATE_FORMAT, $coupon->date) : $buycraft_language->get('language', 'never'),
 			'USES' => $buycraft_language->get('language', 'uses'),
 			'UNLIMITED_VALUE' => $coupon->redeem_unlimited,
 			'UNLIMITED_USAGE' => $buycraft_language->get('language', 'unlimited_usage'),
@@ -566,7 +504,7 @@ if(isset($_GET['action'])){
 			'EDIT_IN_BUYCRAFT' => $buycraft_language->get('language', 'edit_coupon_in_buycraft')
 		));
 
-		if($user->hasPermission('admincp.buycraft.coupons.delete')){
+		if ($user->hasPermission('admincp.buycraft.coupons.delete')) {
 			$smarty->assign(array(
 				'DELETE_COUPON' => $buycraft_language->get('language', 'delete_coupon'),
 				'CONFIRM_DELETE_COUPON' => $buycraft_language->get('language', 'confirm_delete_coupon'),
@@ -578,41 +516,35 @@ if(isset($_GET['action'])){
 
 	} else {
 		Redirect::to(URL::build('/panel/tebex/coupons'));
-		die();
 	}
 
 } else {
 	// Get all coupons
-	$coupons = $queries->getWhere('buycraft_coupons', array('id', '<>', 0));
+    $coupons = DB::getInstance()->query('SELECT * FROM nl2_buycraft_coupons');
 
-	if($user->hasPermission('admincp.buycraft.coupons.new')){
+	if ($user->hasPermission('admincp.buycraft.coupons.new')) {
 		$smarty->assign(array(
 			'NEW_COUPON' => $buycraft_language->get('language', 'new_coupon'),
 			'NEW_COUPON_LINK' => URL::build('/panel/tebex/coupons/', 'action=new')
 		));
 	}
 
-	$template_array = array();
-	if(count($coupons)){
-		foreach($coupons as $coupon){
+	$template_array = [];
+	if ($coupons->count()) {
+		foreach($coupons->results() as $coupon) {
 			$template_array[] = array(
 				'code' => Output::getClean($coupon->code),
 				'expiry_unix' => Output::getClean($coupon->date),
-				'expiry' => ($coupon->date ? date('d M Y, H:i', $coupon->date) : $buycraft_language->get('language', 'never')),
+				'expiry' => ($coupon->date ? date(DATE_FORMAT, $coupon->date) : $buycraft_language->get('language', 'never')),
 				'limit' => Output::getClean($coupon->redeem_limit),
 				'link' => URL::build('/panel/tebex/coupons/', 'action=view&id=' . Output::getClean($coupon->id))
 			);
 		}
 
-		if(!defined('TEMPLATE_BUYCRAFT_SUPPORT')){
-			$template->addCSSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/css/dataTables.bootstrap4.min.css' => array()
-			));
-
-			$template->addJSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/dataTables/jquery.dataTables.min.js' => array(),
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/js/dataTables.bootstrap4.min.js' => array()
-			));
+		if (!defined('TEMPLATE_BUYCRAFT_SUPPORT')) {
+            $template->assets()->include([
+                AssetTree::DATATABLES,
+            ]);
 
 			$template->addJSScript('
 				$(document).ready(function() {
@@ -649,13 +581,13 @@ if(isset($_GET['action'])){
 	$template_file = 'tebex/coupons.tpl';
 }
 
-if(isset($success))
+if (isset($success))
 	$smarty->assign(array(
 		'SUCCESS' => $success,
 		'SUCCESS_TITLE' => $language->get('general', 'success')
 	));
 
-if(isset($errors) && count($errors))
+if (isset($errors) && count($errors))
 	$smarty->assign(array(
 		'ERRORS' => $errors,
 		'ERRORS_TITLE' => $language->get('general', 'error')
@@ -670,9 +602,6 @@ $smarty->assign(array(
 	'SUBMIT' => $language->get('general', 'submit'),
 	'COUPONS' => $buycraft_language->get('language', 'coupons')
 ));
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
 
 $template->onPageLoad();
 

@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
@@ -16,13 +16,13 @@ define('PAGE', 'buycraft');
 $category_id = explode('/', $route);
 $category_id = $category_id[count($category_id) - 1];
 
-if(!$category_id){
+if (!$category_id) {
 	require_once(ROOT_PATH . '/404.php');
 	die();
 }
 
 $category_id = explode('-', $category_id);
-if(!is_numeric($category_id[0])){
+if (!is_numeric($category_id[0])) {
 	require_once(ROOT_PATH . '/404.php');
 	die();
 }
@@ -31,7 +31,7 @@ $category_id = $category_id[0];
 // Query category
 $category = DB::getInstance()->query('SELECT categories.id AS id, categories.name AS name, categories.parent_category AS parent_category, descriptions.description AS description, descriptions.image AS image FROM nl2_buycraft_categories AS categories LEFT JOIN nl2_buycraft_categories_descriptions AS descriptions ON descriptions.category_id = categories.id WHERE categories.id = ?', array($category_id));
 
-if(!$category->count()){
+if (!$category->count()) {
 	require_once(ROOT_PATH . '/404.php');
 	die();
 }
@@ -40,58 +40,53 @@ $category = $category->first();
 
 // Get variables from cache
 $cache->setCache('buycraft_settings');
-if($cache->isCached('buycraft_url')){
+if ($cache->isCached('buycraft_url')) {
 	$buycraft_url = Output::getClean(rtrim($cache->retrieve('buycraft_url'), '/'));
 } else {
 	$buycraft_url = '/store';
 }
 
-$page_metadata = $queries->getWhere('page_descriptions', array('page', '=', $buycraft_url . '/view'));
-if(count($page_metadata)){
-	define('PAGE_DESCRIPTION', str_replace(array('{site}', '{category_title}', '{description}'), array(SITE_NAME, Output::getClean($category->name), Output::getClean(strip_tags(Output::getDecoded($category->description)))), $page_metadata[0]->description));
-	define('PAGE_KEYWORDS', $page_metadata[0]->tags);
+$page_metadata = DB::getInstance()->get('page_descriptions', ['page', '=', $buycraft_url . '/view']);
+if ($page_metadata->count()) {
+	define('PAGE_DESCRIPTION', str_replace(array('{site}', '{category_title}', '{description}'), array(SITE_NAME, Output::getClean($category->name), Output::getClean(strip_tags(Output::getDecoded($category->description)))), $page_metadata->first()->description));
+	define('PAGE_KEYWORDS', $page_metadata->first()->tags);
 }
 
 $page_title = Output::getClean($category->name);
-require_once(ROOT_PATH . '/core/templates/frontend_init.php');
-
-require(ROOT_PATH . '/core/includes/emojione/autoload.php'); // Emojione
-$emojione = new Emojione\Client(new Emojione\Ruleset());
+require_once ROOT_PATH . '/core/templates/frontend_init.php';
 
 // Retrieve store info from database
-$store_url = $queries->getWhere('buycraft_settings', array('name', '=', 'domain'));
-if(!count($store_url)){
+$store_url = DB::getInstance()->get('buycraft_settings', ['name', '=', 'domain']);
+if (!$store_url->count()) {
 	die('Please configure and synchronise the Tebex module in the StaffCP first!');
 } else {
-	$store_url = Output::getClean(rtrim($store_url[0]->value, '/'));
+	$store_url = Output::getClean(rtrim($store_url->first()->value, '/'));
 }
 
 // Show home tab?
-$home_tab = $queries->getWhere('buycraft_settings', array('name', '=', 'home_tab'));
+$home_tab = DB::getInstance()->get('buycraft_settings', ['name', '=', 'home_tab']);
 
-if(count($home_tab))
-    $home_tab = $home_tab[0]->value;
+if ($home_tab->count())
+    $home_tab = $home_tab->first()->value;
 else
     $home_tab = 1;
 
-$currency = $queries->getWhere('buycraft_settings', array('name', '=', 'currency_symbol'));
-$currency = Output::getPurified($currency[0]->value);
+$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+$currency = Output::getClean($currency->first()->value);
 
 // Get packages
 $packages = DB::getInstance()->query('SELECT packages.id AS id, packages.category_id AS category_id, packages.name AS name, packages.order AS `order`, packages.price AS price, packages.sale_active AS sale_active, packages.sale_discount AS sale_discount, descriptions.description AS description, descriptions.image AS image FROM nl2_buycraft_packages AS packages LEFT JOIN nl2_buycraft_packages_descriptions AS descriptions ON descriptions.package_id = packages.id WHERE packages.category_id = ? ORDER BY `order` ASC', array($category_id));
 
-if(!$packages->count()){
+if (!$packages->count()) {
 	$smarty->assign('NO_PACKAGES', $buycraft_language->get('language', 'no_packages'));
 } else {
 	$packages = $packages->results();
 	$category_packages = array();
 
-	foreach($packages as $package){
-		$content = Output::getDecoded($package->description);
-		$content = $emojione->unicodeToImage($content);
-		$content = Output::getPurified($content);
+	foreach ($packages as $package) {
+        $content = EventHandler::executeEvent('renderTebexContent', ['content' => $package->description ?? ''])['content'];
 
-		$image = (isset($package->image) && !is_null($package->image) ? Output::getClean(Output::getDecoded($package->image)) : null);
+		$image = (isset($package->image) && $package->image ? ((defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean($package->image)) : null);
 
 		$category_packages[] = array(
 			'id' => Output::getClean($package->id),
@@ -118,17 +113,17 @@ $smarty->assign(array(
 ));
 
 // Query categories
-$categories_query = $queries->orderWhere('buycraft_categories', 'parent_category IS NULL', '`order`', 'ASC');
-$categories = array();
+$categories_query = DB::getInstance()->query('SELECT * FROM nl2_buycraft_categories WHERE parent_category IS NULL ORDER BY `order` ASC');
+$categories = [];
 
-if(count($categories_query)){
-	foreach($categories_query as $item){
+if ($categories_query->count()) {
+	foreach ($categories_query->results() as $item) {
 		$subcategories_query = DB::getInstance()->query('SELECT id, `name` FROM nl2_buycraft_categories WHERE parent_category = ? ORDER BY `order` ASC', array($item->id))->results();
 
-		$subcategories = array();
+		$subcategories = [];
 		$active = false;
-		if(count($subcategories_query)){
-			foreach($subcategories_query as $subcategory){
+		if (count($subcategories_query)) {
+			foreach ($subcategories_query as $subcategory) {
 				$active = Output::getClean($category->name) == Output::getClean($subcategory->name);
 
 				$subcategories[] = array(
@@ -159,20 +154,12 @@ $smarty->assign(array(
 	'CONTENT' => $content
 ));
 
-$template->addCSSFiles(array(
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/ckeditor/plugins/spoiler/css/spoiler.css' => array(),
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/emoji/css/emojione.min.css' => array()
-));
-
-$template->addJSFiles(array(
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/ckeditor/plugins/spoiler/js/spoiler.js' => array()
-));
+$template->assets()->include([
+    AssetTree::TINYMCE,
+]);
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets, $template);
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
 $template->onPageLoad();
 

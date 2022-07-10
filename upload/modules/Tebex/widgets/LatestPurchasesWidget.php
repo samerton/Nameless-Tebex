@@ -9,16 +9,18 @@
  *  Store latest purchases widget
  */
 class LatestPurchasesWidget extends WidgetBase {
-	private $_smarty, $_language, $_cache, $_user, $_buycraft_language;
+    private Cache $_cache;
+    private Language $_language, $_buycraft_language;
 
-	public function __construct($pages, $smarty, $language, $buycraft_language, $cache, $user){
-		parent::__construct($pages);
+	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language){
+        $widget_query = self::getData('Latest Purchases');
+
+        parent::__construct(self::parsePages($widget_query));
 
 		$this->_smarty = $smarty;
 		$this->_language = $language;
 		$this->_buycraft_language = $buycraft_language;
 		$this->_cache = $cache;
-		$this->_user = $user;
 
 		// Get order
 		$order = DB::getInstance()->query('SELECT `order` FROM nl2_widgets WHERE `name` = ?', array('Latest Purchases'))->first();
@@ -32,7 +34,7 @@ class LatestPurchasesWidget extends WidgetBase {
 		$this->_order = $order->order;
 	}
 
-	public function initialise(){
+	public function initialise(): void {
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
 		$queries = new Queries();
@@ -51,18 +53,19 @@ class LatestPurchasesWidget extends WidgetBase {
 			$latest_purchases = array();
 
 			if (count($latest_purchases_query)) {
-				$timeago = new Timeago(TIMEZONE);
+				$timeago = new TimeAgo(TIMEZONE);
 				$purchase_users = [];
 
 				foreach ($latest_purchases_query as $purchase) {
                     if (isset($purchase_users[$purchase->player_uuid])) {
                         [$user_id, $style, $username] = $purchase_users[$purchase->player_uuid];
                     } else {
-                        // TODO: user integrations support for pr13
-                        $purchase_user = new User($purchase->player_uuid, 'uuid');
-                        if ($purchase_user->exists()) {
+                        $integration = Integrations::getInstance()->getIntegration('Minecraft');
+                        if (($purchase_user = new IntegrationUser($integration, $purchase->player_uuid, 'identifier'))->exists()) {
+                            $purchase_user = $purchase_user->getUser();
+
                             $user_id = Output::getClean($purchase_user->data()->id);
-                            $style = $purchase_user->getGroupClass();
+                            $style = $purchase_user->getGroupStyle();
                             $username = $purchase_user->getDisplayName();
                         } else {
                             $user_id = 0;
@@ -74,14 +77,14 @@ class LatestPurchasesWidget extends WidgetBase {
                     }
 
 					$latest_purchases[] = array(
-						'avatar' => Util::getAvatarFromUUID(Output::getClean($purchase->player_uuid), 64),
+						'avatar' => AvatarSource::getAvatarFromUUID(Output::getClean($purchase->player_uuid)),
 						'profile' => URL::build('/profile/' . $username),
 						'price' => Output::getClean($purchase->amount),
 						'currency' => Output::getClean($purchase->currency_iso),
 						'currency_symbol' => Output::getClean($purchase->currency_symbol),
 						'uuid' => Output::getClean($purchase->player_uuid),
-						'date_full' => date('d M Y, H:i', $purchase->date),
-						'date_friendly' => $timeago->inWords(date('d M Y, H:i', $purchase->date), $this->_language->getTimeLanguage()),
+						'date_full' => date(DATE_FORMAT, $purchase->date),
+						'date_friendly' => $timeago->inWords(date('d M Y, H:i', $purchase->date), $this->_language),
 						'style' => $style,
 						'username' => $username,
 						'user_id' => $user_id

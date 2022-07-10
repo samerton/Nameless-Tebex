@@ -9,10 +9,13 @@
  *  Store featured package widget
  */
 class FeaturedPackageWidget extends WidgetBase {
-	private $_smarty, $_language, $_buycraft_language, $_cache;
+    private Cache $_cache;
+    private Language $_language, $_buycraft_language;
 
-	public function __construct($pages, $smarty, $language, $buycraft_language, $cache){
-		parent::__construct($pages);
+	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language){
+        $widget_query = self::getData('Featured Package');
+
+        parent::__construct(self::parsePages($widget_query));
 
 		$this->_smarty = $smarty;
 		$this->_language = $language;
@@ -31,7 +34,7 @@ class FeaturedPackageWidget extends WidgetBase {
 		$this->_order = $order->order;
 	}
 
-	public function initialise(){
+	public function initialise(): void {
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
 		if($this->_cache->isCached('featured_packages'))
@@ -62,14 +65,10 @@ class FeaturedPackageWidget extends WidgetBase {
 		$currency = DB::getInstance()->query('SELECT * FROM nl2_buycraft_settings WHERE `name` = \'currency_symbol\'', array());
 		$currency = $currency->count() ? Output::getPurified($currency->first()->value) : '$';
 
-		require_once(ROOT_PATH . '/core/includes/emojione/autoload.php'); // Emojione
-		$emojione = new Emojione\Client(new Emojione\Ruleset());
-
 		$content = Output::getDecoded($package->description);
-		$content = $emojione->unicodeToImage($content);
 		$content = Output::getPurified($content);
 
-		$image = (isset($package->image) && !is_null($package->image) ? Output::getClean(Output::getDecoded($package->image)) : null);
+		$image = (isset($package->image) ? Output::getClean(Output::getDecoded($package->image)) : null);
 
 		$template_package = array(
 			'id' => Output::getClean($package->id),

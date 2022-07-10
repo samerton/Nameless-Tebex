@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr8
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
@@ -19,8 +19,8 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.1.4';
-		$nameless_version = '2.0.0-pr12';
+		$module_version = '1.2.0';
+		$nameless_version = '2.0.0-pr13';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
@@ -47,6 +47,35 @@ class Tebex_Module extends Module {
 
 		// Ajax GET requests
 		$pages->addAjaxScript(URL::build('/queries/store/sync'));
+
+        EventHandler::registerEvent('renderTebexContent',
+            $this->_buycraft_language->get('language', 'render_content'),
+            [
+                'content' => $this->_language->get('general', 'content')
+            ],
+            true,
+            true
+        );
+
+        EventHandler::registerEvent('renderTebexContentEdit',
+            $this->_buycraft_language->get('language', 'render_content_edit'),
+            [
+                'content' => $this->_language->get('general', 'content')
+            ],
+            true,
+            true
+        );
+
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::purify');
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::codeTransform', false, 15);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::decode', false, 20);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::renderEmojis', false, 10);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::replaceAnchors', false, 15);
+
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::purify');
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::codeTransform', false, 15);
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::decode', false, 20);
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::replaceAnchors', false, 15);
 	}
 
 	public function onInstall(){
@@ -99,13 +128,11 @@ class Tebex_Module extends Module {
 		// Widgets
 		// Latest purchases
 		require_once(ROOT_PATH . '/modules/Tebex/widgets/LatestPurchasesWidget.php');
-		$module_pages = $widgets->getPages('Latest Purchases');
-		$widgets->add(new LatestPurchasesWidget($module_pages, $smarty, $this->_language, $this->_buycraft_language, $cache, $user));
+		$widgets->add(new LatestPurchasesWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
 
 		// Featured package
 		require_once(ROOT_PATH . '/modules/Tebex/widgets/FeaturedPackageWidget.php');
-		$module_pages = $widgets->getPages('Featured Package');
-		$widgets->add(new FeaturedPackageWidget($module_pages, $smarty, $this->_language, $this->_buycraft_language, $cache));
+		$widgets->add(new FeaturedPackageWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
 
 		// Add link to navbar
 		$cache->setCache('navbar_order');
@@ -238,105 +265,90 @@ class Tebex_Module extends Module {
 
 	private function initialise(){
 		// Generate tables
-		try {
-			$engine = Config::get('mysql/engine');
-			$charset = Config::get('mysql/charset');
-		} catch(Exception $e){
-			$engine = 'InnoDB';
-			$charset = 'utf8mb4';
-		}
+		$db = DB::getInstance();
 
-		if(!$engine || is_array($engine))
-			$engine = 'InnoDB';
-
-		if(!$charset || is_array($charset))
-			$charset = 'latin1';
-
-		$queries = new Queries();
-
-		if(!$queries->tableExists('buycraft_bans')){
+		if(!$db->showTables('buycraft_bans')){
 			try {
-				$queries->createTable('buycraft_bans', ' `id` int(11) NOT NULL AUTO_INCREMENT, `time` int(11) NOT NULL DEFAULT \'0\', `ip` varchar(64) DEFAULT NULL, `payment_email` varchar(256) DEFAULT NULL, `reason` text, `user_ign` varchar(20) DEFAULT NULL, `uuid` varchar(32) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_bans', ' `id` int(11) NOT NULL AUTO_INCREMENT, `time` int(11) NOT NULL DEFAULT \'0\', `ip` varchar(64) DEFAULT NULL, `payment_email` varchar(256) DEFAULT NULL, `reason` text, `user_ign` varchar(20) DEFAULT NULL, `uuid` varchar(32) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_categories')){
+		if(!$db->showTables('buycraft_categories')){
 			try {
-				$queries->createTable('buycraft_categories', ' `id` int(11) NOT NULL AUTO_INCREMENT, `order` int(11) NOT NULL, `name` varchar(256) NOT NULL, `only_subcategories` tinyint(1) NOT NULL DEFAULT \'0\', `parent_category` int(11) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_categories', ' `id` int(11) NOT NULL AUTO_INCREMENT, `order` int(11) NOT NULL, `name` varchar(256) NOT NULL, `only_subcategories` tinyint(1) NOT NULL DEFAULT \'0\', `parent_category` int(11) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_categories_descriptions')){
+		if(!$db->showTables('buycraft_categories_descriptions')){
 			try {
-				$queries->createTable('buycraft_categories_descriptions', ' `id` int(11) NOT NULL AUTO_INCREMENT, `category_id` int(11) NOT NULL, `description` mediumtext, `image` varchar(128) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_categories_descriptions', ' `id` int(11) NOT NULL AUTO_INCREMENT, `category_id` int(11) NOT NULL, `description` mediumtext, `image` varchar(128) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_commands')){
+		if(!$db->showTables('buycraft_commands')){
 			try {
-				$queries->createTable('buycraft_commands', ' `id` int(11) NOT NULL AUTO_INCREMENT, `type` tinyint(1) NOT NULL DEFAULT \'0\', `command` varchar(256) DEFAULT NULL, `payment` int(11) NOT NULL, `package` int(11) NOT NULL, `player_name` varchar(20) DEFAULT NULL, `player_uuid` varchar(32) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_commands', ' `id` int(11) NOT NULL AUTO_INCREMENT, `type` tinyint(1) NOT NULL DEFAULT \'0\', `command` varchar(256) DEFAULT NULL, `payment` int(11) NOT NULL, `package` int(11) NOT NULL, `player_name` varchar(20) DEFAULT NULL, `player_uuid` varchar(32) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_coupons')){
+		if(!$db->showTables('buycraft_coupons')){
 			try {
-				$queries->createTable('buycraft_coupons', '`id` int(11) NOT NULL AUTO_INCREMENT, `code` varchar(64) NOT NULL, `effective_type` varchar(64) NOT NULL, `effective_packages` text, `effective_categories` text, `discount_type` varchar(64) NOT NULL, `discount_percentage` varchar(20) NOT NULL DEFAULT \'0\', `discount_value` varchar(20) NOT NULL DEFAULT \'0\', `redeem_unlimited` tinyint(1) NOT NULL DEFAULT \'0\', `expires` tinyint(1) NOT NULL DEFAULT \'0\', `redeem_limit` int(11) NOT NULL DEFAULT \'0\', `date` int(11) NOT NULL DEFAULT \'0\', `basket_type` varchar(64) DEFAULT NULL, `start_date` int(11) NOT NULL DEFAULT \'0\', `user_limit` int(11) NOT NULL DEFAULT \'0\', `minimum` varchar(20) DEFAULT NULL, `username` varchar(64) DEFAULT NULL, `note` varchar(512) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_coupons', '`id` int(11) NOT NULL AUTO_INCREMENT, `code` varchar(64) NOT NULL, `effective_type` varchar(64) NOT NULL, `effective_packages` text, `effective_categories` text, `discount_type` varchar(64) NOT NULL, `discount_percentage` varchar(20) NOT NULL DEFAULT \'0\', `discount_value` varchar(20) NOT NULL DEFAULT \'0\', `redeem_unlimited` tinyint(1) NOT NULL DEFAULT \'0\', `expires` tinyint(1) NOT NULL DEFAULT \'0\', `redeem_limit` int(11) NOT NULL DEFAULT \'0\', `date` int(11) NOT NULL DEFAULT \'0\', `basket_type` varchar(64) DEFAULT NULL, `start_date` int(11) NOT NULL DEFAULT \'0\', `user_limit` int(11) NOT NULL DEFAULT \'0\', `minimum` varchar(20) DEFAULT NULL, `username` varchar(64) DEFAULT NULL, `note` varchar(512) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_gift_cards')){
+		if(!$db->showTables('buycraft_gift_cards')){
 			try {
-				$queries->createTable('buycraft_gift_cards', ' `id` int(11) NOT NULL AUTO_INCREMENT, `code` varchar(64) NOT NULL, `balance_starting` varchar(8) NOT NULL, `balance_remaining` varchar(8) NOT NULL, `balance_currency` varchar(3) NOT NULL, `note` varchar(512) DEFAULT NULL, `void` tinyint(1) NOT NULL DEFAULT \'0\', PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_gift_cards', ' `id` int(11) NOT NULL AUTO_INCREMENT, `code` varchar(64) NOT NULL, `balance_starting` varchar(8) NOT NULL, `balance_remaining` varchar(8) NOT NULL, `balance_currency` varchar(3) NOT NULL, `note` varchar(512) DEFAULT NULL, `void` tinyint(1) NOT NULL DEFAULT \'0\', PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_packages')){
+		if(!$db->showTables('buycraft_packages')){
 			try {
-				$queries->createTable('buycraft_packages', ' `id` int(11) NOT NULL AUTO_INCREMENT, `category_id` int(11) NOT NULL, `order` int(11) NOT NULL, `name` varchar(256) NOT NULL, `price` varchar(8) NOT NULL, `sale_active` tinyint(1) NOT NULL DEFAULT \'0\', `sale_discount` varchar(8) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_packages', ' `id` int(11) NOT NULL AUTO_INCREMENT, `category_id` int(11) NOT NULL, `order` int(11) NOT NULL, `name` varchar(256) NOT NULL, `price` varchar(8) NOT NULL, `sale_active` tinyint(1) NOT NULL DEFAULT \'0\', `sale_discount` varchar(8) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_packages_descriptions')){
+		if(!$db->showTables('buycraft_packages_descriptions')){
 			try {
-				$queries->createTable('buycraft_packages_descriptions', ' `id` int(11) NOT NULL AUTO_INCREMENT, `package_id` int(11) NOT NULL, `description` mediumtext, `image` varchar(128) DEFAULT NULL, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_packages_descriptions', ' `id` int(11) NOT NULL AUTO_INCREMENT, `package_id` int(11) NOT NULL, `description` mediumtext, `image` varchar(128) DEFAULT NULL, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_payments')){
+		if(!$db->showTables('buycraft_payments')){
 			try {
-				$queries->createTable('buycraft_payments', ' `id` int(11) NOT NULL AUTO_INCREMENT, `amount` varchar(8) NOT NULL, `date` int(11) NOT NULL, `currency_iso` varchar(3) NOT NULL, `currency_symbol` varchar(3) NOT NULL, `player_uuid` varchar(32) NOT NULL, `player_name` varchar(32) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_payments', ' `id` int(11) NOT NULL AUTO_INCREMENT, `amount` varchar(8) NOT NULL, `date` int(11) NOT NULL, `currency_iso` varchar(3) NOT NULL, `currency_symbol` varchar(3) NOT NULL, `player_uuid` varchar(32) NOT NULL, `player_name` varchar(32) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
-		if(!$queries->tableExists('buycraft_settings')){
+		if(!$db->showTables('buycraft_settings')){
 			try {
-				$queries->createTable('buycraft_settings', ' `id` int(11) NOT NULL AUTO_INCREMENT, `name` varchar(16) NOT NULL, `value` text, PRIMARY KEY (`id`)', "ENGINE=$engine DEFAULT CHARSET=$charset");
+				$db->createTable('buycraft_settings', ' `id` int(11) NOT NULL AUTO_INCREMENT, `name` varchar(16) NOT NULL, `value` text, PRIMARY KEY (`id`)');
 			} catch(Exception $e){
 				// Error
 			}
 		}
 
 		// Permissions
-		$admin_permissions = $queries->getWhere('groups', array('id', '=', 2));
-		$admin_permissions = $admin_permissions[0]->permissions;
+		$admin_permissions = $db->get('groups', array('id', '=', 2))->first()->permissions;
 
 		$admin_permissions = json_decode($admin_permissions, true);
 		$admin_permissions['admincp.buycraft'] = 1;
@@ -358,8 +370,12 @@ class Tebex_Module extends Module {
 
 		$admin_permissions_updated = json_encode($admin_permissions);
 
-		$queries->update('groups', 2, array(
+		$db->update('groups', 2, array(
 			'permissions' => $admin_permissions_updated
 		));
 	}
+
+    public function getDebugInfo(): array {
+        return [];
+    }
 }

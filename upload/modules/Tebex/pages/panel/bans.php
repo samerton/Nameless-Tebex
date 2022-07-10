@@ -2,36 +2,16 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
  *  Tebex integration for NamelessMC - bans
  */
 
-// Can the user view the AdminCP?
-if($user->isLoggedIn()){
-	if(!$user->canViewStaffCP()){
-		// No
-		Redirect::to(URL::build('/'));
-		die();
-	} else {
-		// Check the user has re-authenticated
-		if(!$user->isAdmLoggedIn()){
-			// They haven't, do so now
-			Redirect::to(URL::build('/panel/auth'));
-			die();
-		} else {
-			if(!$user->hasPermission('admincp.buycraft.bans')){
-				Redirect::to(URL::build('/panel'));
-				die();
-			}
-		}
-	}
-} else {
-	// Not logged in
-	Redirect::to(URL::build('/login'));
-	die();
+if (!$user->handlePanelPageLoad('admincp.buycraft.bans')) {
+    require_once(ROOT_PATH . '/403.php');
+    die();
 }
 
 define('PAGE', 'panel');
@@ -41,101 +21,94 @@ $page_title = $buycraft_language->get('language', 'bans');
 require_once(ROOT_PATH . '/core/templates/backend_init.php');
 require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
 
-if(isset($_GET['action'])){
-	if($_GET['action'] == 'new'){
-		if(!$user->hasPermission('admincp.buycraft.bans.new')){
+if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'new') {
+		if (!$user->hasPermission('admincp.buycraft.bans.new')) {
 			Redirect::to(URL::build('/panel/tebex/bans'));
-			die();
 		}
 
-		if(Input::exists()){
+		if (Input::exists()) {
 			$errors = array();
 
-			if(Token::check(Input::get('token'))){
-				$validate = new Validate();
-				$validation = $validate->check($_POST, array(
-					'user' => array(
-						'required' => true
-					)
-				));
+			if (Token::check(Input::get('token'))) {
+				$validation = Validate::check($_POST, [
+					'user' => [
+						Validate::REQUIRED => true,
+					]
+				])->messages([
+                    'user' => [
+                        Validate::REQUIRED => $buycraft_language->get('language', 'must_enter_uuid'),
+                    ]
+                ]);
 
-				if($validation->passed()){
+				if ($validation->passed()) {
 					// POST to Buycraft
 					$post_object = new stdClass();
 					$post_object->user = Output::getClean(str_replace('-', '', $_POST['user']));
 
-					if(isset($_POST['ip']) && strlen($_POST['ip']) > 0){
+					if (isset($_POST['ip']) && strlen($_POST['ip']) > 0) {
 						$post_object->ip = Output::getClean($_POST['ip']);
 					}
 
-					if(isset($_POST['reason']) && strlen($_POST['reason']) > 0){
+					if (isset($_POST['reason']) && strlen($_POST['reason']) > 0) {
 						$post_object->reason = Output::getPurified($_POST['reason']);
 					}
 
 					$json = json_encode($post_object);
 
 					// Get server key
-					$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+					$server_key = DB::getInstance()->get('buycraft_settings', array('name', '=', 'server_key'));
 
-					if(count($server_key))
-						$server_key = $server_key[0]->value;
+					if ($server_key->count())
+						$server_key = $server_key->first()->value;
 					else
 						$server_key = null;
 
-					$ch = curl_init();
-					curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/bans');
-					curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-					curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-					curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+                    $result = HttpClient::post('https://plugin.tebex.io/bans', $json, [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'X-Tebex-Secret' => $server_key
+                        ]
+                    ]);
 
-					$ch_result = curl_exec($ch);
-
-					$result = json_decode($ch_result);
-
-					curl_close($ch);
-
-					if(isset($result->error_code)){
-						$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
+					if ($result->hasError()) {
+						$errors[] = Output::getClean($result->getError());
 					} else {
-						Buycraft::updateBans($server_key, null, DB::getInstance());
+						Buycraft::updateBans($server_key, DB::getInstance());
 						Session::flash('buycraft_ban_success', $buycraft_language->get('language', 'ban_created_successfully'));
 						Redirect::to(URL::build('/panel/tebex/bans'));
-						die();
 					}
-
 				} else {
-					$errors[] = $buycraft_language->get('language', 'must_enter_uuid');
+					$errors = $validation->errors();
 				}
 			} else {
 				$errors[] = $language->get('general', 'invalid_token');
 			}
 		}
-
 	}
 }
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets);
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
-if(Session::exists('buycraft_ban_success')){
+if (Session::exists('buycraft_ban_success')) {
 	$success = Session::flash('buycraft_ban_success');
 }
 
-if(isset($success))
+if (isset($success))
 	$smarty->assign(array(
 		'SUCCESS' => $success,
 		'SUCCESS_TITLE' => $language->get('general', 'success')
 	));
 
-if(isset($errors) && count($errors))
+if (isset($errors) && count($errors))
 	$smarty->assign(array(
 		'ERRORS' => $errors,
 		'ERRORS_TITLE' => $language->get('general', 'error')
 	));
 
-if(isset($_GET['action'])){
-	if($_GET['action'] == 'new'){
+if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'new') {
 		$smarty->assign(array(
 			'UUID' => $buycraft_language->get('language', 'uuid'),
 			'IP_ADDRESS' => $buycraft_language->get('language', 'ip_address'),
@@ -152,27 +125,25 @@ if(isset($_GET['action'])){
 
 		$template_file = 'tebex/bans_new.tpl';
 
-	} else if($_GET['action'] == 'view'){
+	} else if ($_GET['action'] == 'view') {
 		// Get ban
-		if(!isset($_GET['id']) || !is_numeric($_GET['id'])){
+		if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 			Redirect::to(URL::build('/panel/tebex/bans'));
-			die();
 		}
 
-		$ban = $queries->getWhere('buycraft_bans', array('id', '=', $_GET['id']));
-		if(!count($ban)){
+		$ban = DB::getInstance()->get('buycraft_bans', array('id', '=', $_GET['id']));
+		if (!$ban->count()) {
 			Redirect::to(URL::build('/panel/tebex/bans'));
-			die();
 		} else
-			$ban = $ban[0];
+			$ban = $ban->first();
 
 		$smarty->assign(array(
-			'VIEWING_BAN' => str_replace('{x}', Output::getClean($ban->id), $buycraft_language->get('language', 'viewing_ban_x')),
+			'VIEWING_BAN' => $buycraft_language->get('language', 'viewing_ban', ['ban' => Output::getClean($ban->id)]),
 			'BACK' => $language->get('general', 'back'),
 			'BACK_LINK' => URL::build('/panel/tebex/bans'),
 			'IGN' => $buycraft_language->get('language', 'ign'),
 			'IGN_VALUE' => Output::getClean($ban->user_ign),
-			'AVATAR' => Util::getAvatarFromUUID(Output::getClean($ban->uuid)),
+			'AVATAR' => AvatarSource::getAvatarFromUUID(Output::getClean($ban->uuid ?? $ban->user_ign)),
 			'UUID' => $buycraft_language->get('language', 'uuid'),
 			'UUID_VALUE' => Output::getClean($ban->uuid),
 			'IP_ADDRESS' => $buycraft_language->get('language', 'ip_address'),
@@ -189,46 +160,43 @@ if(isset($_GET['action'])){
 
 	} else {
 		Redirect::to(URL::build('/panel/tebex/bans'));
-		die();
 	}
 
 } else {
 	// Get all bans
-	$bans = $queries->getWhere('buycraft_bans', array('id', '<>', 0));
+	$bans = DB::getInstance()->get('buycraft_bans', array('id', '<>', 0));
 
-	if($user->hasPermission('admincp.buycraft.bans.new')){
+	if ($user->hasPermission('admincp.buycraft.bans.new')) {
 		$smarty->assign(array(
 			'NEW_BAN' => $buycraft_language->get('language', 'new_ban'),
 			'NEW_BAN_LINK' => URL::build('/panel/tebex/bans/', 'action=new')
 		));
 	}
 
-	if(!count($bans)){
+	if (!$bans->count()) {
 		$smarty->assign(array(
 			'NO_BANS' => $buycraft_language->get('language', 'no_bans')
 		));
 
 	} else {
 		$template_array = array();
-		foreach($bans as $ban){
-			$ban_user = $queries->getWhere('users', array('uuid', '=', $ban->uuid));
+        $integration = Integrations::getInstance()->getIntegration('Minecraft');
 
-			if(count($ban_user)){
-				$avatar = $user->getAvatar($ban_user[0]->id);
-				$style = $user->getGroupClass($ban_user[0]->id);
-
-			} else {
-				$avatar = Util::getAvatarFromUUID(Output::getClean($ban->uuid));
-				$style = '';
-
-			}
+		foreach ($bans->results() as $ban) {
+            if (($banned_user = new IntegrationUser($integration, $ban->uuid, 'identifier'))->exists()) {
+                $avatar = $banned_user->getUser()->getAvatar();
+                $style = $banned_user->getUser()->getGroupStyle();
+            } else {
+                $avatar = AvatarSource::getAvatarFromUUID(Output::getClean($ban->uuid ?? $ban->user_ign));
+                $style = '';
+            }
 
 			$template_array[] = array(
 				'avatar' => $avatar,
 				'style' => $style,
 				'ign' => Output::getClean($ban->user_ign),
 				'ip' => ($user->hasPermission('modcp.ip_lookup') ? Output::getClean($ban->ip) : '-'),
-				'date' => date('d M Y, H:i', $ban->time),
+				'date' => date(DATE_FORMAT, $ban->time),
 				'date_unix' => Output::getClean($ban->time),
 				'link' => URL::build('/panel/tebex/bans/', 'action=view&id=' . Output::getClean($ban->id))
 			);
@@ -242,15 +210,10 @@ if(isset($_GET['action'])){
 			'BAN_LIST' => $template_array
 		));
 
-		if(!defined('TEMPLATE_BUYCRAFT_SUPPORT')){
-			$template->addCSSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/css/dataTables.bootstrap4.min.css' => array()
-			));
-
-			$template->addJSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/dataTables/jquery.dataTables.min.js' => array(),
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/js/dataTables.bootstrap4.min.js' => array()
-			));
+		if (!defined('TEMPLATE_BUYCRAFT_SUPPORT')) {
+            $template->assets()->include([
+                AssetTree::DATATABLES,
+            ]);
 
 			$template->addJSScript('
 				$(document).ready(function() {
@@ -287,12 +250,9 @@ $smarty->assign(array(
 	'BANS' => $buycraft_language->get('language', 'bans')
 ));
 
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
-
 $template->onPageLoad();
 
-require(ROOT_PATH . '/core/templates/panel_navbar.php');
+require ROOT_PATH . '/core/templates/panel_navbar.php';
 
 // Display template
 $template->displayTemplate($template_file, $smarty);

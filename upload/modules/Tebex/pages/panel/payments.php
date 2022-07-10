@@ -2,72 +2,49 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
  *  Tebex integration for NamelessMC - payments
  */
 
-// Can the user view the AdminCP?
-if($user->isLoggedIn()){
-	if(!$user->canViewStaffCP()){
-		// No
-		Redirect::to(URL::build('/'));
-		die();
-	} else {
-		// Check the user has re-authenticated
-		if(!$user->isAdmLoggedIn()){
-			// They haven't, do so now
-			Redirect::to(URL::build('/panel/auth'));
-			die();
-		} else {
-			if(!$user->hasPermission('admincp.buycraft.payments')){
-				Redirect::to(URL::build('/panel'));
-				die();
-			}
-		}
-	}
-} else {
-	// Not logged in
-	Redirect::to(URL::build('/login'));
-	die();
+if (!$user->handlePanelPageLoad('admincp.buycraft.payments')) {
+    require_once ROOT_PATH . '/403.php';
+    die();
 }
 
 define('PAGE', 'panel');
 define('PARENT_PAGE', 'buycraft');
 define('PANEL_PAGE', 'buycraft_payments');
 $page_title = $buycraft_language->get('language', 'payments');
-require_once(ROOT_PATH . '/core/templates/backend_init.php');
-require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
+require_once ROOT_PATH . '/core/templates/backend_init.php';
+require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
 
-if(isset($_GET['action']) && $_GET['action'] == 'create' && $user->hasPermission('admincp.buycraft.payments.new')){
-	if(Input::exists()){
-		$errors = array();
+if (isset($_GET['action']) && $_GET['action'] == 'create' && $user->hasPermission('admincp.buycraft.payments.new')) {
+	if (Input::exists()) {
+		$errors = [];
 
-		if(Token::check(Input::get('token'))){
-			if(isset($_GET['step'])){
-				if($_GET['step'] == 2){
-					if(!isset($_SESSION['bc_payment_ign']) || !isset($_SESSION['bc_payment_package'])){
+		if (Token::check(Input::get('token'))) {
+			if (isset($_GET['step'])) {
+				if ($_GET['step'] == 2) {
+					if (!isset($_SESSION['bc_payment_ign']) || !isset($_SESSION['bc_payment_package'])) {
 						Redirect::to(URL::build('/panel/tebex/payments', 'action=create'));
-						die();
 					}
 
-					if(isset($_POST['bc_payment_price']) && strlen($_POST['bc_payment_price']) > 0){
+					if (isset($_POST['bc_payment_price']) && strlen($_POST['bc_payment_price']) > 0) {
 						// Ensure package exists
-						$package = $queries->getWhere('buycraft_packages', array('id', '=', $_SESSION['bc_payment_package']));
-						if(!count($package)){
+						$package = DB::getInstance()->get('buycraft_packages', ['id', '=', $_SESSION['bc_payment_package']]);
+						if (!$package->count()) {
 							Redirect::to(URL::build('/panel/tebex/payments', 'action=create'));
-							die();
-
 						}
-						$package = $package[0];
+						$package = $package->first();
 
 						// Get server key
-						$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+						$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-						if(count($server_key))
-							$server_key = $server_key[0]->value;
+						if ($server_key->count())
+							$server_key = $server_key->first()->value;
 						else
 							$server_key = null;
 
@@ -75,8 +52,8 @@ if(isset($_GET['action']) && $_GET['action'] == 'create' && $user->hasPermission
 						$post_object = new stdClass();
 						$post_object->price = $package->price + 0;
 
-						foreach($_POST as $key => $item){
-							if($key != 'token' && $key != 'bc_payment_price' && $key != 'price'){
+						foreach ($_POST as $key => $item) {
+							if ($key != 'token' && $key != 'bc_payment_price' && $key != 'price') {
 								$post_object->{$key} = $item;
 							}
 						}
@@ -89,52 +66,43 @@ if(isset($_GET['action']) && $_GET['action'] == 'create' && $user->hasPermission
 						$package->id = $_SESSION['bc_payment_package'] + 0;
 						$package->options = $post_object;
 
-						$post->packages = array($package);
+						$post->packages = [$package];
 
 						$json = json_encode($post);
 
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/payments');
-						curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-						curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+                        $result = HttpClient::post('https://plugin.tebex.io/payments', $json, [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'X-Tebex-Secret' => $server_key
+                            ]
+                        ]);
 
-						$ch_result = curl_exec($ch);
-
-						$result = json_decode($ch_result);
-
-						curl_close($ch);
-
-						if(isset($result->error_code)){
-							$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
+						if ($result->hasError()) {
+							$errors[] = Output::getClean($result->getError());
 						} else {
-							Buycraft::updatePayments($server_key, null, DB::getInstance());
+							Buycraft::updatePayments($server_key, DB::getInstance());
 							Session::flash('buycraft_payment_success', $buycraft_language->get('language', 'payment_created_successfully'));
 							Redirect::to(URL::build('/panel/tebex/payments'));
-							die();
 						}
 
 					} else
 						$errors[] = $buycraft_language->get('language', 'please_enter_valid_price');
 				}
 			} else {
-				$validate = new Validate();
-				$validation = $validate->check($_POST, array(
-					'ign' => array(
-						'required' => true
-					),
-					'package' => array(
-						'required' => true
-					)
-				));
+				$validation = Validate::check($_POST, [
+					'ign' => [
+						Validate::REQUIRED => true,
+					],
+					'package' => [
+						Validate::REQUIRED => true,
+					]
+				]);
 
-				if($validation->passed()){
+				if ($validation->passed()) {
 					$_SESSION['bc_payment_ign'] = $_POST['ign'];
 					$_SESSION['bc_payment_package'] = $_POST['package'];
 
 					Redirect::to(URL::build('/panel/tebex/payments', 'action=create&step=2'));
-					die();
 
 				} else
 					$errors[] = $buycraft_language->get('language', 'please_enter_valid_ign_package');
@@ -145,46 +113,44 @@ if(isset($_GET['action']) && $_GET['action'] == 'create' && $user->hasPermission
 }
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets);
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
-if(Session::exists('buycraft_payment_success')){
+if (Session::exists('buycraft_payment_success')) {
 	$success = Session::flash('buycraft_payment_success');
 }
 
-if(isset($success))
+if (isset($success))
 	$smarty->assign(array(
 		'SUCCESS' => $success,
 		'SUCCESS_TITLE' => $language->get('general', 'success')
 	));
 
-if(isset($errors) && count($errors))
+if (isset($errors) && count($errors))
 	$smarty->assign(array(
 		'ERRORS' => $errors,
 		'ERRORS_TITLE' => $language->get('general', 'error')
 	));
 
-if(isset($_GET['user'])){
+if (isset($_GET['user'])) {
 	// Get payments for user
-	$payments = DB::getInstance()->query('SELECT * FROM nl2_buycraft_payments WHERE player_uuid = ? ORDER BY `date` DESC', array($_GET['user']));
+	$payments = DB::getInstance()->query('SELECT * FROM nl2_buycraft_payments WHERE player_uuid = ? ORDER BY `date` DESC', [$_GET['user']]);
 
-	if($payments->count()){
+	if ($payments->count()) {
 		$payments = $payments->results();
 
-		$payment_user = new User($_GET['user'], 'uuid');
+        $integration = Integrations::getInstance()->getIntegration('Minecraft');
 
-		if ($payment_user->exists()) {
-			$avatar = $payment_user->getAvatar();
-			$style = $payment_user->getGroupClass();
-
+		if (($payment_user = new IntegrationUser($integration, $_GET['user'], 'identifier'))->exists()) {
+			$avatar = $payment_user->getUser()->getAvatar();
+			$style = $payment_user->getUser()->getGroupStyle();
 		} else {
-			$avatar = Util::getAvatarFromUUID(Output::getClean($_GET['user']));
+			$avatar = AvatarSource::getAvatarFromUUID(Output::getClean($_GET['user']));
 			$style = '';
-
 		}
 
-		$template_payments = array();
+		$template_payments = [];
 
-		foreach($payments as $payment){
+		foreach ($payments as $payment) {
 			$template_payments[] = array(
 				'user_link' => URL::build('/panel/tebex/payments/', 'user=' . Output::getClean($payment->player_uuid)),
 				'user_style' => $style,
@@ -193,7 +159,7 @@ if(isset($_GET['user'])){
 				'user_uuid' => Output::getClean($payment->player_uuid),
 				'currency' => Output::getPurified($payment->currency_symbol),
 				'amount' => Output::getClean($payment->amount),
-				'date' => date('d M Y, H:i', $payment->date),
+				'date' => date(DATE_FORMAT, $payment->date),
 				'link' => URL::build('/panel/tebex/payments', 'payment=' . Output::getClean($payment->id))
 			);
 		}
@@ -206,15 +172,10 @@ if(isset($_GET['user'])){
 			'USER_PAYMENTS' => $template_payments
 		));
 
-		if(!defined('TEMPLATE_BUYCRAFT_SUPPORT')){
-			$template->addCSSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/css/dataTables.bootstrap4.min.css' => array()
-			));
-
-			$template->addJSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/dataTables/jquery.dataTables.min.js' => array(),
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/js/dataTables.bootstrap4.min.js' => array()
-			));
+		if (!defined('TEMPLATE_BUYCRAFT_SUPPORT')) {
+            $template->assets()->include([
+                AssetTree::DATATABLES,
+            ]);
 
 			$template->addJSScript('
 				$(document).ready(function() {
@@ -242,39 +203,36 @@ if(isset($_GET['user'])){
 		$smarty->assign('NO_PAYMENTS', $buycraft_language->get('language', 'no_payments_for_user'));
 
 	$smarty->assign(array(
-		'VIEWING_PAYMENTS_FOR_USER' => str_replace('{x}', Output::getClean($_GET['user']), $buycraft_language->get('language', 'viewing_payments_for_user_x')),
+		'VIEWING_PAYMENTS_FOR_USER' => $buycraft_language->get('language', 'viewing_payments_for_user', ['user' => Output::getClean($_GET['user'])]),
 		'BACK' => $language->get('general', 'back'),
 		'BACK_LINK' => URL::build('/panel/tebex/payments')
 	));
 
 	$template_file = 'tebex/payments_user.tpl';
 
-} else if(isset($_GET['payment'])){
+} else if (isset($_GET['payment'])) {
 	// View payment
-	$payment = $queries->getWhere('buycraft_payments', array('id', '=', $_GET['payment']));
-	if(count($payment))
-		$payment = $payment[0];
+	$payment = DB::getInstance()->get('buycraft_payments', ['id', '=', $_GET['payment']]);
+	if ($payment->count())
+		$payment = $payment->first();
 	else {
 		Redirect::to(URL::build('/panel/tebex/payments'));
-		die();
 	}
 
-	$payment_user = new User($payment->player_uuid, 'uuid');
+    $integration = Integrations::getInstance()->getIntegration('Minecraft');
 
-	if ($payment_user->exists()) {
-		$avatar = $payment_user->getAvatar();
-		$style = $payment_user->getGroupClass();
-
+    if (($payment_user = new IntegrationUser($integration, $_GET['user'], 'identifier'))->exists()) {
+		$avatar = $payment_user->getUser()->getAvatar();
+		$style = $payment_user->getUser()->getGroupStyle();
 	} else {
-		$avatar = Util::getAvatarFromUUID(Output::getClean($payment->player_uuid));
+		$avatar = AvatarSource::getAvatarFromUUID(Output::getClean($payment->player_uuid ?? $payment->player_name));
 		$style = '';
-
 	}
 
-	$commands = $queries->getWhere('buycraft_commands', array('payment', '=', $payment->id));
+	$commands = DB::getInstance()->get('buycraft_commands', ['payment', '=', $payment->id]);
 
 	$smarty->assign(array(
-		'VIEWING_PAYMENT' => str_replace('{x}', Output::getClean($payment->id), $buycraft_language->get('language', 'viewing_payment')),
+		'VIEWING_PAYMENT' => $buycraft_language->get('language', 'viewing_payment', ['payment' => Output::getClean($payment->id)]),
 		'BACK' => $language->get('general', 'back'),
 		'BACK_LINK' => URL::build('/panel/tebex/payments'),
 		'IGN' => $buycraft_language->get('language', 'ign'),
@@ -289,14 +247,14 @@ if(isset($_GET['user'])){
 		'CURRENCY_SYMBOL' => Output::getClean($payment->currency_symbol),
 		'CURRENCY_ISO' => Output::getClean($payment->currency_iso),
 		'DATE' => $buycraft_language->get('language', 'date'),
-		'DATE_VALUE' => date('d M Y, H:i', $payment->date),
+		'DATE_VALUE' => date(DATE_FORMAT, $payment->date),
 		'PENDING_COMMANDS' => $buycraft_language->get('language', 'pending_commands')
 	));
 
-	if(count($commands)){
+	if ($commands->count()) {
 		$pending_commands = array();
 
-		foreach($commands as $command){
+		foreach ($commands as $command) {
 			$pending_commands[] = Output::getClean($command->command);
 		}
 
@@ -307,8 +265,8 @@ if(isset($_GET['user'])){
 
 	$template_file = 'tebex/payments_view.tpl';
 
-} else if(isset($_GET['action'])){
-	if($_GET['action'] == 'create'){
+} else if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'create') {
 		// New payment
 		$smarty->assign(array(
 			'NEW_PAYMENT' => $buycraft_language->get('language', 'new_payment'),
@@ -320,26 +278,24 @@ if(isset($_GET['user'])){
 			'NO' => $language->get('general', 'no')
 		));
 
-		if(isset($_GET['step'])){
-			if($_GET['step'] == 2){
-				if(!isset($_SESSION['bc_payment_ign']) || !isset($_SESSION['bc_payment_package'])){
+		if (isset($_GET['step'])) {
+			if ($_GET['step'] == 2) {
+				if (!isset($_SESSION['bc_payment_ign']) || !isset($_SESSION['bc_payment_package'])) {
 					Redirect::to(URL::build('/panel/tebex/payments/', 'action=create'));
-					die();
 				}
 
 				// Ensure package exists
-				$package = $queries->getWhere('buycraft_packages', array('id', '=', $_SESSION['bc_payment_package']));
-				if(!count($package)){
+				$package = DB::getInstance()->get('buycraft_packages', ['id', '=', $_SESSION['bc_payment_package']]);
+				if (!$package->count()) {
 					Redirect::to(URL::build('/panel/tebex/payments/', 'action=create'));
-					die();
 				}
-				$package = $package[0];
+				$package = $package->first();
 
 				// Get server key
-				$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+				$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-				if(count($server_key))
-					$server_key = $server_key[0]->value;
+				if ($server_key->count())
+					$server_key = $server_key->first()->value;
 				else
 					$server_key = null;
 
@@ -350,29 +306,30 @@ if(isset($_GET['user'])){
 
 				} else {
 					// Query API
-					if($server_key){
+					if ($server_key) {
 						$package_fields = Buycraft::getPackageFields($server_key, $_SESSION['bc_payment_package']);
 
-						$cache->store('package-' . $_SESSION['bc_payment_package'], $package_fields, 120);
+                        if (isset($package_fields['response'])) {
+                            $cache->store('package-' . $_SESSION['bc_payment_package'], $package_fields['response'], 120);
+                        }
 
 					} else {
 						$server_key_error = true;
 						$error = $buycraft_language->get('language', 'invalid_server_key');
 					}
-
 				}
 
-				if(isset($error))
+				if (isset($error))
 					$smarty->assign(array(
 						'ERRORS' => array($error),
 						'ERRORS_TITLE' => $language->get('general', 'error')
 					));
 
-				if(!isset($server_key_error)){
+				if (!isset($server_key_error)) {
 					$template_package_fields = array();
-					if(count($package_fields)){
-						foreach($package_fields as $field){
-							switch($field->type){
+					if (count($package_fields)) {
+						foreach ($package_fields as $field) {
+							switch ($field->type) {
 								case 'numeric':
 								case 'text':
 								case 'username':
@@ -398,7 +355,7 @@ if(isset($_GET['user'])){
 									break;
 
 								case 'dropdown':
-									$options = array();
+									$options = [];
 
 									foreach($field->options as $option){
 										$options[] = array(
@@ -431,12 +388,12 @@ if(isset($_GET['user'])){
 			}
 		} else {
 			// Choose package
-			$packages = $queries->orderAll('buycraft_packages', '`order`', 'ASC');
+			$packages = DB::getInstance()->query('SELECT * FROM nl2_buycraft_packages ORDER BY `order` ASC');
 
-			if(count($packages)){
-				$template_packages = array();
+			if ($packages->count()) {
+				$template_packages = [];
 
-				foreach($packages as $package){
+				foreach ($packages->results() as $package) {
 					$template_packages[] = array(
 						'id' => Output::getClean($package->id),
 						'name' => Output::getClean($package->name)
@@ -457,25 +414,25 @@ if(isset($_GET['user'])){
 	}
 
 } else {
-	$payments = $queries->orderAll('buycraft_payments', 'date', 'DESC');
+    $payments = DB::getInstance()->query('SELECT * FROM nl2_buycraft_payments ORDER BY `date` DESC');
 
-	if (count($payments)) {
+	if ($payments->count()) {
 		$template_payments = [];
 		$payment_users = [];
 
-		foreach ($payments as $payment) {
+		foreach ($payments->results() as $payment) {
 			if (isset($payment_users[$payment->player_uuid])) {
 				[$avatar, $style] = $payment_users[$payment->player_uuid];
 			} else {
-				$payment_user = new User($payment->player_uuid, 'uuid');
+                $integration = Integrations::getInstance()->getIntegration('Minecraft');
 
-				if ($payment_user->exists()) {
-					$avatar = $payment_user->getAvatar();
-					$style = $payment_user->getGroupClass();
-				} else {
-					$avatar = Util::getAvatarFromUUID(Output::getClean($payment->player_uuid));
-					$style = '';
-				}
+                if (($payment_user = new IntegrationUser($integration, $payment->player_uuid, 'identifier'))->exists()) {
+                    $avatar = $payment_user->getUser()->getAvatar();
+                    $style = $payment_user->getUser()->getGroupStyle();
+                } else {
+                    $avatar = AvatarSource::getAvatarFromUUID(Output::getClean($payment->player_uuid ?? $payment->player_name));
+                    $style = '';
+                }
 
 				$payment_users[$payment->player_uuid] = [$avatar, $style];
 			}
@@ -488,7 +445,7 @@ if(isset($_GET['user'])){
 				'uuid' => Output::getClean($payment->player_uuid),
 				'currency_symbol' => Output::getPurified($payment->currency_symbol),
 				'amount' => Output::getClean($payment->amount),
-				'date' => date('d M Y, H:i', $payment->date),
+				'date' => date(DATE_FORMAT, $payment->date),
 				'date_unix' => Output::getClean($payment->date),
 				'link' => URL::build('/panel/tebex/payments/', 'payment=' . Output::getClean($payment->id))
 			);
@@ -502,15 +459,10 @@ if(isset($_GET['user'])){
 			'ALL_PAYMENTS' => $template_payments
 		));
 
-		if(!defined('TEMPLATE_BUYCRAFT_SUPPORT')){
-			$template->addCSSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/css/dataTables.bootstrap4.min.css' => array()
-			));
-
-			$template->addJSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/dataTables/jquery.dataTables.min.js' => array(),
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/js/dataTables.bootstrap4.min.js' => array()
-			));
+		if (!defined('TEMPLATE_BUYCRAFT_SUPPORT')) {
+            $template->assets()->include([
+                AssetTree::DATATABLES,
+            ]);
 
 			$template->addJSScript('
 				$(document).ready(function() {
@@ -543,7 +495,6 @@ if(isset($_GET['user'])){
 	));
 
 	$template_file = 'tebex/payments.tpl';
-
 }
 
 $smarty->assign(array(
@@ -555,9 +506,6 @@ $smarty->assign(array(
 	'SUBMIT' => $language->get('general', 'submit'),
 	'PAYMENTS' => $buycraft_language->get('language', 'payments')
 ));
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
 
 $template->onPageLoad();
 

@@ -61,6 +61,16 @@
                                 </ul>
                             </div>
                         {/if}
+
+                        {if isset($DEBUG_RESPONSE) && count($DEBUG_RESPONSE)}
+                            <div class="alert bg-info text-white">
+                                <ul>
+                                    {foreach from=$DEBUG_RESPONSE item=item}
+                                        <li>{$item|escape}</li>
+                                    {/foreach}
+                                </ul>
+                            </div>
+                        {/if}
                     </div>
                 </div>
 

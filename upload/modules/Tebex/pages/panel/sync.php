@@ -2,123 +2,105 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
  *  Tebex integration for NamelessMC - admin sync
  */
 
-// Can the user view the AdminCP?
-if($user->isLoggedIn()){
-	if(!$user->canViewStaffCP()){
-		// No
-		Redirect::to(URL::build('/'));
-		die();
-	} else {
-		// Check the user has re-authenticated
-		if(!$user->isAdmLoggedIn()){
-			// They haven't, do so now
-			Redirect::to(URL::build('/panel/auth'));
-			die();
-		} else {
-			if(!$user->hasPermission('admincp.buycraft')){
-				Redirect::to(URL::build('/panel'));
-				die();
-			}
-		}
-	}
-} else {
-	// Not logged in
-	Redirect::to(URL::build('/login'));
-	die();
+if (!$user->handlePanelPageLoad('admincp.buycraft')) {
+    require_once ROOT_PATH . '/403.php';
+    die();
 }
 
 define('PAGE', 'panel');
 define('PARENT_PAGE', 'buycraft');
 define('PANEL_PAGE', 'buycraft_sync');
 $page_title = $buycraft_language->get('language', 'force_sync');
-require_once(ROOT_PATH . '/core/templates/backend_init.php');
-require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
+require_once ROOT_PATH . '/core/templates/backend_init.php';
+require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
 
-$success = array();
-$errors = array();
+$success = [];
+$success_debug = [];
+$errors = [];
 
 // Get server key
-$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+$server_key = DB::getInstance()->get('buycraft_settings', array('name', '=', 'server_key'));
 
-if(count($server_key)){
-	$server_key = $server_key[0]->value;
+if ($server_key->count()) {
+	$server_key = $server_key->first()->value;
 
-	if(strlen($server_key) == 40){
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('X-Buycraft-Secret: ' . $server_key));
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
+	if (strlen($server_key) == 40) {
 		$db = DB::getInstance();
 
-		$result = Buycraft::updateInformation($server_key, $ch, $db);
+		$result = Buycraft::updateInformation($server_key, $db);
 
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_information'));
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_information', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'information_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updateCommandQueue($server_key, $ch, $db);
+		$result = Buycraft::updateCommandQueue($server_key, $db);
 
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_command_queue'));
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_command_queue', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'command_queue_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updateListing($server_key, $ch, $db);
+		$result = Buycraft::updateListing($server_key, $db);
 
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_listing'));
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_listing', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'listing_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updatePackages($server_key, $ch, $db);
+		$result = Buycraft::updatePackages($server_key, $db);
 
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_packages'));
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_packages', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'packages_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updatePayments($server_key, $ch, $db);
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_payments'));
+        $result = Buycraft::updatePayments($server_key, $db);
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_payments', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'payments_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updateGiftCards($server_key, $ch, $db);
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_gift_cards'));
+		$result = Buycraft::updateGiftCards($server_key, $db);
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_gift_cards', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'gift_cards_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updateCoupons($server_key, $ch, $db);
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_coupons'));
+		$result = Buycraft::updateCoupons($server_key, $db);
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_coupons', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'coupons_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
 
-		$result = Buycraft::updateBans($server_key, $ch, $db);
-		if(!$result || isset($result->error_code)){
-			$errors[] = str_replace('{x}', (isset($result->error_message) ? Output::getClean($result->error_message) . ' (' . Output::getClean($result->error_code) . ')' : ''), $buycraft_language->get('language', 'unable_to_get_bans'));
+		$result = Buycraft::updateBans($server_key, $db);
+		if (!$result || isset($result['error'])) {
+			$errors[] = $buycraft_language->get('language', 'unable_to_get_bans', ['error' => isset($result['error']) ? Output::getClean($result['error']) : '']);
 		} else {
 			$success[] = $buycraft_language->get('language', 'bans_retrieved_successfully');
+            $success_debug[] = json_encode($result, JSON_PRETTY_PRINT);
 		}
-
-		curl_close($ch);
 
 	} else {
 		$errors[] = $buycraft_language->get('language', 'invalid_server_key');
@@ -128,19 +110,23 @@ if(count($server_key)){
 }
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets);
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
-if(isset($success) && count($success))
+if (isset($success) && count($success))
 	$smarty->assign(array(
 		'SUCCESS' => $success,
 		'SUCCESS_TITLE' => $language->get('general', 'success')
 	));
 
-if(isset($errors) && count($errors))
+if (isset($errors) && count($errors))
 	$smarty->assign(array(
 		'ERRORS' => $errors,
 		'ERRORS_TITLE' => $language->get('general', 'error')
 	));
+
+if (defined('DEBUGGING') && DEBUGGING && isset($success_debug)) {
+    $smarty->assign('DEBUG_RESPONSE', $success_debug);
+}
 
 $smarty->assign(array(
 	'PARENT_PAGE' => PARENT_PAGE,
@@ -149,9 +135,6 @@ $smarty->assign(array(
 	'PAGE' => PANEL_PAGE,
 	'FORCE_SYNC' => $buycraft_language->get('language', 'force_sync')
 ));
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
 
 $template->onPageLoad();
 

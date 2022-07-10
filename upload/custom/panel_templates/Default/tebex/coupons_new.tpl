@@ -119,9 +119,9 @@
 
                             <div class="row">
                                 <div class="col-md-6 align-self-center">
-                                    <div class="form-group">
-                                        <label for="inputRedeemUnlimited">{$UNLIMITED_USAGE}</label>
-                                        <input type="checkbox" name="redeem_unlimited" id="inputRedeemUnlimited" class="js-switch" {if $UNLIMITED_USAGE_VALUE}checked {/if}/>
+                                    <div class="form-group custom-control custom-switch">
+                                        <input type="checkbox" name="redeem_unlimited" id="inputRedeemUnlimited" class="custom-control-input" {if $UNLIMITED_USAGE_VALUE} checked{/if} />
+                                        <label for="inputRedeemUnlimited" class="custom-control-label">{$UNLIMITED_USAGE}</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -134,9 +134,9 @@
 
                             <div class="row">
                                 <div class="col-md-6 align-self-center">
-                                    <div class="form-group">
-                                        <label for="inputExpireNever">{$NEVER_EXPIRE}</label>
-                                        <input type="checkbox" name="expire_never" id="inputExpireNever" class="js-switch" {if $NEVER_EXPIRE_VALUE}checked {/if}/>
+                                    <div class="form-group custom-control custom-switch">
+                                        <input type="checkbox" name="expire_never" id="inputExpireNever" class="custom-control-input" {if $NEVER_EXPIRE_VALUE} checked{/if} />
+                                        <label for="inputExpireNever" class="custom-control-label">{$NEVER_EXPIRE}</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

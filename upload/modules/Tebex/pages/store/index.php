@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
@@ -14,9 +14,6 @@ define('PAGE', 'tebex');
 $page_title = $buycraft_language->get('language', 'store');
 require_once(ROOT_PATH . '/core/templates/frontend_init.php');
 
-require(ROOT_PATH . '/core/includes/emojione/autoload.php'); // Emojione
-$emojione = new Emojione\Client(new Emojione\Ruleset());
-
 // Get variables from cache
 $cache->setCache('buycraft_settings');
 if($cache->isCached('buycraft_url')){
@@ -26,35 +23,37 @@ if($cache->isCached('buycraft_url')){
 }
 
 // Retrieve store info from database
-$store_url = $queries->getWhere('buycraft_settings', array('name', '=', 'domain'));
-if(!count($store_url)){
+$store_url = DB::getInstance()->get('buycraft_settings', array('name', '=', 'domain'));
+if (!$store_url->count()) {
 	die('Please configure and synchronise the Tebex module in the StaffCP first!');
 } else {
-	$store_url = Output::getClean($store_url[0]->value);
+	$store_url = Output::getClean($store_url->first()->value);
 }
 
 // Show home tab?
-$home_tab = $queries->getWhere('buycraft_settings', array('name', '=', 'home_tab'));
+$home_tab = DB::getInstance()->get('buycraft_settings', array('name', '=', 'home_tab'));
 
-if(count($home_tab))
-    $home_tab = $home_tab[0]->value;
+if ($home_tab->count())
+    $home_tab = $home_tab->first()->value;
 else
     $home_tab = 1;
 
-$content = $queries->getWhere('buycraft_settings', array('name', '=', 'store_content'));
-$content = Output::getDecoded($content[0]->value);
-$content = $emojione->unicodeToImage($content);
-$content = Output::getPurified($content);
+$content = DB::getInstance()->get('buycraft_settings', array('name', '=', 'store_content'));
+if ($content->count()) {
+    $content = EventHandler::executeEvent('renderTebexContent', ['content' => $content->first()->value])['content'];
+} else {
+    $content = '';
+}
 
-$categories_query = $queries->orderWhere('buycraft_categories', 'parent_category IS NULL', '`order`', 'ASC');
+$categories_query = DB::getInstance()->query('SELECT id, name FROM nl2_buycraft_categories WHERE parent_category IS NULL ORDER BY `order` ASC');
 $categories = array();
 
-if(count($categories_query)){
-	foreach($categories_query as $item){
+if ($categories_query->count()) {
+	foreach($categories_query->results() as $item) {
 		$subcategories_query = DB::getInstance()->query('SELECT id, `name` FROM nl2_buycraft_categories WHERE parent_category = ? ORDER BY `order` ASC', array($item->id))->results();
 
 		$subcategories = array();
-		if(count($subcategories_query)){
+		if (count($subcategories_query)) {
 			foreach($subcategories_query as $subcategory){
 				$subcategories[] = array(
 					'url' => URL::build($buycraft_url . '/category/' . Output::getClean($subcategory->id)),
@@ -73,7 +72,6 @@ if(count($categories_query)){
 
 if ($home_tab == 0) {
     Redirect::to($categories[current(array_keys($categories))]['url']);
-    die();
 }
 
 $smarty->assign(array(
@@ -87,20 +85,12 @@ $smarty->assign(array(
 	'CONTENT' => $content
 ));
 
-$template->addCSSFiles(array(
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/ckeditor/plugins/spoiler/css/spoiler.css' => array(),
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/emoji/css/emojione.min.css' => array()
-));
-
-$template->addJSFiles(array(
-	(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/ckeditor/plugins/spoiler/js/spoiler.js' => array()
-));
+$template->assets()->include([
+    AssetTree::TINYMCE,
+]);
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets, $template);
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
 $template->onPageLoad();
 

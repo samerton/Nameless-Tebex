@@ -2,62 +2,45 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
  *  Tebex integration for NamelessMC - gift cards
  */
 
-// Can the user view the AdminCP?
-if($user->isLoggedIn()){
-	if(!$user->canViewStaffCP()){
-		// No
-		Redirect::to(URL::build('/'));
-		die();
-	} else {
-		// Check the user has re-authenticated
-		if(!$user->isAdmLoggedIn()){
-			// They haven't, do so now
-			Redirect::to(URL::build('/panel/auth'));
-			die();
-		} else {
-			if(!$user->hasPermission('admincp.buycraft.giftcards')){
-				Redirect::to(URL::build('/panel'));
-				die();
-			}
-		}
-	}
-} else {
-	// Not logged in
-	Redirect::to(URL::build('/login'));
-	die();
+if (!$user->handlePanelPageLoad('admincp.buycraft.giftcards')) {
+    require_once ROOT_PATH . '/403.php';
+    die();
 }
 
 define('PAGE', 'panel');
 define('PARENT_PAGE', 'buycraft');
 define('PANEL_PAGE', 'buycraft_giftcards');
 $page_title = $buycraft_language->get('language', 'gift_cards');
-require_once(ROOT_PATH . '/core/templates/backend_init.php');
-require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
+require_once ROOT_PATH . '/core/templates/backend_init.php';
+require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
 
-if(isset($_GET['action'])) {
-	$errors = array();
+if (isset($_GET['action'])) {
+	$errors = [];
 
-	if($_GET['action'] == 'new' && $user->hasPermission('admincp.buycraft.giftcards.new')){
-		if(Input::exists()){
-			if(Token::check(Input::get('token'))){
-				$validate = new Validate();
-				$validation = $validate->check($_POST, array(
-					'amount' => array(
-						'required' => true
-					)
-				));
+	if ($_GET['action'] == 'new' && $user->hasPermission('admincp.buycraft.giftcards.new')) {
+		if (Input::exists()) {
+			if (Token::check(Input::get('token'))) {
+				$validation = Validate::check($_POST, [
+					'amount' => [
+						Validate::REQUIRED => true,
+					],
+				])->messages([
+                    'amount' => [
+                        Validate::REQUIRED => $buycraft_language->get('language', 'gift_card_value_required'),
+                    ],
+                ]);
 
-				if($validation->passed()){
+				if ($validation->passed()) {
 					$post_object = new stdClass();
 					$post_object->amount = $_POST['amount'] + 0;
-					if(isset($_POST['note']) && strlen($_POST['note']) > 0){
+					if (isset($_POST['note']) && strlen($_POST['note']) > 0) {
 						$post_object->note = Output::getPurified($post_object->note);
 					}
 
@@ -65,147 +48,130 @@ if(isset($_GET['action'])) {
 
 					// POST to Buycraft
 					// Get server key
-					$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+					$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-					if(count($server_key))
-						$server_key = $server_key[0]->value;
+					if ($server_key->count())
+						$server_key = $server_key->first()->value;
 					else
 						$server_key = null;
 
-					$ch = curl_init();
-					curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/gift-cards');
-					curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-					curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-					curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+                    $result = HttpClient::post('https://plugin.tebex.io/gift-cards', $json, [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'X-Tebex-Secret' => $server_key
+                        ]
+                    ]);
 
-					$ch_result = curl_exec($ch);
-
-					$result = json_decode($ch_result);
-
-					curl_close($ch);
-
-					if(isset($result->error_code)){
-						$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
+					if ($result->hasError()) {
+						$errors[] = Output::getClean($result->getError());
 					} else {
-						if(isset($result->data) && isset($result->data->code)){
-							Session::flash('new_gift_card_success', str_replace('{x}', Output::getClean($result->data->code), $buycraft_language->get('language', 'gift_card_created_successfully_with_code')));
+                        $result = $result->json();
+
+						if (isset($result->data) && isset($result->data->code)) {
+							Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_created_successfully_with_code', ['code' => Output::getClean($result->data->code)]));
 						} else {
 							Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_created_successfully'));
 						}
 
-						Buycraft::updateGiftCards($server_key, null, DB::getInstance());
+						Buycraft::updateGiftCards($server_key, DB::getInstance());
 						Redirect::to(URL::build('/panel/tebex/giftcards'));
-						die();
 					}
-
 				} else {
-					$errors[] = $buycraft_language->get('language', 'gift_card_value_required');
+					$errors = $validation->errors();
 				}
-
 			} else
 				$errors[] = $language->get('general', 'invalid_token');
 		}
-
-	} else if($user->hasPermission('admincp.buycraft.giftcards.update')){
-		if(Input::exists()){
-			if(Token::check(Input::get('token'))){
-				if(isset($_POST['action'])){
-					if(!isset($_GET['id']) || !is_numeric($_GET['id'])){
+	} else if ($user->hasPermission('admincp.buycraft.giftcards.update')) {
+		if (Input::exists()) {
+			if (Token::check(Input::get('token'))) {
+				if (isset($_POST['action'])) {
+					if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 						Redirect::to(URL::build('/panel/tebex/giftcards'));
-						die();
 					}
 
-					$giftcard = $queries->getWhere('buycraft_gift_cards', array('id', '=', $_GET['id']));
-					if(!count($giftcard)){
+					$giftcard = DB::getInstance()->get('buycraft_gift_cards', ['id', '=', $_GET['id']]);
+					if (!$giftcard->count()) {
 						Redirect::to(URL::build('/panel/tebex/giftcards'));
-						die();
 					}
-					$giftcard = $giftcard[0];
+					$giftcard = $giftcard->first();
 
-					if($_POST['action'] == 'void'){
+					if ($_POST['action'] == 'void') {
 						// DELETE request
 						// Get server key
-						$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+						$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-						if(count($server_key))
-							$server_key = $server_key[0]->value;
+						if ($server_key->count())
+							$server_key = $server_key->first()->value;
 						else
 							$server_key = null;
 
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/gift-cards/' . $giftcard->id);
-						curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-						curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+                        // TODO: convert to HttpClient::delete when available
+                        $client = HttpClient::createClient([
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'X-Tebex-Secret' => $server_key
+                            ]
+                        ]);
 
-						$ch_result = curl_exec($ch);
+                        try {
+                            $response = $client->delete('https://plugin.tebex.io/gift-cards/' . $giftcard->id);
 
-						$result = json_decode($ch_result);
+                            DB::getInstance()->delete('buycraft_gift_cards', ['id', '=', $giftcard->id]);
+                            Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_voided_successfully'));
+                            Redirect::to(URL::build('/panel/tebex/giftcards'));
+                        } catch (\GuzzleHttp\Exception\GuzzleException $exception) {
+                            $errors = [Output::getClean($exception->getMessage())];
+                            Log::getInstance()->log(Log::Action('misc/curl_error'), $exception->getMessage());
+                        }
+					} else if ($_POST['action'] == 'update') {
+						$validation = Validate::check($_POST, [
+							'credit' => [
+								Validate::REQUIRED => true,
+							],
+						])->messages([
+                            'credit' => [
+                                Validate::REQUIRED => $buycraft_language->get('language', 'credit_required'),
+                            ],
+                        ]);
 
-						curl_close($ch);
-
-						if(isset($result->error_code)){
-							$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
-						} else {
-							$queries->delete('buycraft_gift_cards', array('id', '=', $giftcard->id));
-							Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_voided_successfully'));
-							Redirect::to(URL::build('/panel/tebex/giftcards'));
-							die();
-						}
-
-					} else if($_POST['action'] == 'update'){
-						$validate = new Validate();
-						$validation = $validate->check($_POST, array(
-							'credit' => array(
-								'required' => true
-							)
-						));
-
-						if($validation->passed()){
+						if ($validation->passed()) {
 							$post_object = new stdClass();
 							$post_object->amount = $_POST['credit'] + 0;
 
 							$json = json_encode($post_object);
 
-							// POST to Buycraft
+							// PUT to Buycraft
 							// Get server key
-							$server_key = $queries->getWhere('buycraft_settings', array('name', '=', 'server_key'));
+							$server_key = DB::getInstance()->get('buycraft_settings', ['name', '=', 'server_key']);
 
-							if(count($server_key))
-								$server_key = $server_key[0]->value;
+							if ($server_key->count())
+								$server_key = $server_key->first()->value;
 							else
 								$server_key = null;
 
-							$ch = curl_init();
-							curl_setopt($ch, CURLOPT_URL, 'https://plugin.buycraft.net/gift-cards/' . $giftcard->id);
-							curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'X-Buycraft-Secret: ' . $server_key));
-							curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-							curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-							curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-							curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+                            // TODO: convert to HttpClient::put when available
+                            $client = HttpClient::createClient([
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'X-Tebex-Secret' => $server_key
+                                ]
+                            ]);
 
-							$ch_result = curl_exec($ch);
+                            try {
+                                $response = $client->put('https://plugin.tebex.io/gift-cards/' . $giftcard->id, ['body' => $json]);
 
-							$result = json_decode($ch_result);
-
-							curl_close($ch);
-
-							if(isset($result->error_code)){
-								$errors[] = Output::getClean($result->error_code . ': ' . $result->error_message);
-							} else {
-								Buycraft::updateGiftCards($server_key, null, DB::getInstance());
-								Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_updated_successfully'));
-								Redirect::to(URL::build('/panel/tebex/giftcards'));
-								die();
-							}
-
+                                Buycraft::updateGiftCards($server_key, DB::getInstance());
+                                Session::flash('new_gift_card_success', $buycraft_language->get('language', 'gift_card_updated_successfully'));
+                                Redirect::to(URL::build('/panel/tebex/giftcards'));
+                            } catch (\GuzzleHttp\Exception\GuzzleException $exception) {
+                                $errors = [Output::getClean($exception->getMessage())];
+                                Log::getInstance()->log(Log::Action('misc/curl_error'), $exception->getMessage());
+                            }
 						} else
-							$errors[] = $buycraft_language->get('language', 'credit_required');
+							$errors = $validation->errors();
 					}
 				}
-
 			} else
 				$errors[] = $language->get('general', 'invalid_token');
 		}
@@ -213,30 +179,30 @@ if(isset($_GET['action'])) {
 }
 
 // Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, array($navigation, $cc_nav, $mod_nav), $widgets);
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
-if(Session::exists('new_gift_card_success')){
+if (Session::exists('new_gift_card_success')) {
 	$success = Session::flash('new_gift_card_success');
 }
 
-if(isset($success))
+if (isset($success))
 	$smarty->assign(array(
 		'SUCCESS' => $success,
 		'SUCCESS_TITLE' => $language->get('general', 'success')
 	));
 
-if(isset($errors) && count($errors))
+if (isset($errors) && count($errors))
 	$smarty->assign(array(
 		'ERRORS' => $errors,
 		'ERRORS_TITLE' => $language->get('general', 'error')
 	));
 
-if(isset($_GET['action'])){
-	if($_GET['action'] == 'new' && $user->hasPermission('admincp.buycraft.giftcards.new')){
+if (isset($_GET['action'])) {
+	if ($_GET['action'] == 'new' && $user->hasPermission('admincp.buycraft.giftcards.new')) {
 		// Get variables
-		$currency = $queries->getWhere('buycraft_settings', array('name', '=', 'currency_symbol'));
-		if(count($currency))
-			$currency = Output::getPurified(Output::getDecoded($currency[0]->value));
+		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		if ($currency->count())
+			$currency = Output::getClean($currency->first()->value);
 		else
 			$currency = '';
 
@@ -256,21 +222,19 @@ if(isset($_GET['action'])){
 
 		$template_file = 'tebex/giftcards_new.tpl';
 
-	} else if ($_GET['action'] == 'view'){
-		if(!isset($_GET['id']) || !is_numeric($_GET['id'])){
+	} else if ($_GET['action'] == 'view') {
+		if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 			Redirect::to(URL::build('/panel/tebex/giftcards'));
-			die();
 		}
 
-		$giftcard = $queries->getWhere('buycraft_gift_cards', array('id', '=', $_GET['id']));
-		if(!count($giftcard)){
+		$giftcard = DB::getInstance()->get('buycraft_gift_cards', ['id', '=', $_GET['id']]);
+		if (!$giftcard->count()) {
 			Redirect::to(URL::build('/panel/tebex/giftcards'));
-			die();
 		}
-		$giftcard = $giftcard[0];
+		$giftcard = $giftcard->first();
 
 		$smarty->assign(array(
-			'VIEWING_GIFT_CARD' => str_replace('{x}', Output::getClean($giftcard->code), $buycraft_language->get('language', 'viewing_gift_card_x')),
+			'VIEWING_GIFT_CARD' => $buycraft_language->get('language', 'viewing_gift_card_x', ['card' => Output::getClean($giftcard->code)]),
 			'BACK' => $language->get('general', 'back'),
 			'BACK_LINK' => URL::build('/panel/tebex/giftcards'),
 			'GIFT_CARD_CODE' => $buycraft_language->get('language', 'gift_card_code'),
@@ -292,16 +256,15 @@ if(isset($_GET['action'])){
 		));
 
 		$template_file = 'tebex/giftcards_view.tpl';
-
 	}
 } else {
 	// Get all gift cards
-	$giftcards = $queries->getWhere('buycraft_gift_cards', array('id', '<>', 0));
+    $giftcards = DB::getInstance()->query('SELECT * FROM nl2_buycraft_gift_cards');
 
-	if(count($giftcards)){
-		$all_giftcards = array();
+	if ($giftcards->count()) {
+		$all_giftcards = [];
 
-		foreach($giftcards as $giftcard){
+		foreach ($giftcards->results() as $giftcard) {
 			$all_giftcards[] = array(
 				'code' => Output::getClean($giftcard->code),
 				'note' => Output::getPurified($giftcard->note),
@@ -320,15 +283,10 @@ if(isset($_GET['action'])){
 			'VIEW' => $buycraft_language->get('language', 'view'),
 		));
 
-		if(!defined('TEMPLATE_BUYCRAFT_SUPPORT')){
-			$template->addCSSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/css/dataTables.bootstrap4.min.css' => array()
-			));
-
-			$template->addJSFiles(array(
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/core/assets/plugins/dataTables/jquery.dataTables.min.js' => array(),
-				(defined('CONFIG_PATH') ? CONFIG_PATH : '') . '/custom/panel_templates/Default/assets/js/dataTables.bootstrap4.min.js' => array()
-			));
+		if (!defined('TEMPLATE_BUYCRAFT_SUPPORT')) {
+            $template->assets()->include([
+                AssetTree::DATATABLES,
+            ]);
 
 			$template->addJSScript('
 				$(document).ready(function() {
@@ -371,9 +329,6 @@ $smarty->assign(array(
 	'SUBMIT' => $language->get('general', 'submit'),
 	'GIFT_CARDS' => $buycraft_language->get('language', 'gift_cards')
 ));
-
-$page_load = microtime(true) - $start;
-define('PAGE_LOAD_TIME', str_replace('{x}', round($page_load, 3), $language->get('general', 'page_loaded_in')));
 
 $template->onPageLoad();
 

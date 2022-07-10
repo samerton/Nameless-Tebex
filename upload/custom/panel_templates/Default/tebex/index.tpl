@@ -43,14 +43,14 @@
                                 <input id="inputSecretKey" name="server_key" class="form-control" placeholder="{$SERVER_KEY}" value="{$SERVER_KEY_VALUE}">
                             </div>
 
-                            <div class="form-group">
-                                <label for="inputAllowGuests">{$ALLOW_GUESTS}</label>
-                                <input type="checkbox" name="allow_guests" id="inputAllowGuests" class="js-switch" {if $ALLOW_GUESTS_VALUE} checked{/if} />
+                            <div class="form-group custom-control custom-switch">
+                                <input type="checkbox" name="allow_guests" id="inputAllowGuests" class="custom-control-input" {if $ALLOW_GUESTS_VALUE} checked{/if} />
+                                <label for="inputAllowGuests" class="custom-control-label">{$ALLOW_GUESTS}</label>
                             </div>
 
-                            <div class="form-group">
-                                <label for="inputHomeTab">{$HOME_TAB}</label>
-                                <input type="checkbox" name="home_tab" id="inputHomeTab" class="js-switch" {if $HOME_TAB_VALUE} checked{/if} />
+                            <div class="form-group custom-control custom-switch">
+                                <input type="checkbox" name="home_tab" id="inputHomeTab" class="custom-control-input" {if $HOME_TAB_VALUE} checked{/if} />
+                                <label for="inputHomeTab" class="custom-control-label">{$HOME_TAB}</label>
                             </div>
 
                             <div class="form-group">

@@ -1,4 +1,4 @@
-<div class="callout callout-info">
+<div class="alert bg-info text-white">
     <h5><i class="icon fa fa-info-circle"></i> {$INFO}</h5>
     {$FEATURED_PACKAGE_INFO}
 </div>
