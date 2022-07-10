@@ -160,12 +160,22 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && $user->hasPermission(
 
     $description = EventHandler::executeEvent('renderTebexContentEdit', ['content' => $package->description ?? ''])['content'];
 
+    if (isset($package->image) && $package->image) {
+        if (strpos($package->image, 'https') !== false) {
+            $image = Output::getClean($package->image);
+        } else {
+            $image = (defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean($package->image);
+        }
+    } else {
+        $image = null;
+    }
+
 	$smarty->assign(array(
 		'PACKAGE_NAME' => Output::getClean(Output::getDecoded($package->name)),
 		'EDITING_PACKAGE' => $buycraft_language->get('language', 'editing_package', ['package' => Output::getClean($package->name)]),
 		'PACKAGE_DESCRIPTION' => $buycraft_language->get('language', 'package_description'),
 		'PACKAGE_IMAGE' => $buycraft_language->get('language', 'package_image'),
-		'PACKAGE_IMAGE_VALUE' => (isset($package->image) ? ((defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean($package->image)) : null),
+		'PACKAGE_IMAGE_VALUE' => $image,
 		'UPLOAD_NEW_IMAGE' => $buycraft_language->get('language', 'upload_new_image'),
 		'BROWSE' => $language->get('general', 'browse'),
 		'BACK' => $language->get('general', 'back'),

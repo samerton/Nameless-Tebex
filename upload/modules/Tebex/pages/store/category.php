@@ -86,7 +86,15 @@ if (!$packages->count()) {
 	foreach ($packages as $package) {
         $content = EventHandler::executeEvent('renderTebexContent', ['content' => $package->description ?? ''])['content'];
 
-		$image = (isset($package->image) && $package->image ? ((defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean($package->image)) : null);
+        if (isset($package->image) && $package->image) {
+            if (strpos($package->image, 'https') !== false) {
+                $image = Output::getClean($package->image);
+            } else {
+                $image = (defined('CONFIG_PATH') ? CONFIG_PATH . '/' : '/') . 'uploads/store/' . Output::getClean($package->image);
+            }
+        } else {
+            $image = null;
+        }
 
 		$category_packages[] = array(
 			'id' => Output::getClean($package->id),
