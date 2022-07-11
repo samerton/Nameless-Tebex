@@ -238,7 +238,7 @@ $smarty->assign(array(
 	'SETTINGS' => $buycraft_language->get('language', 'settings'),
 	'INFO' => $language->get('general', 'info'),
 	'SERVER_KEY' => $buycraft_language->get('language', 'server_key'),
-	'SERVER_KEY_INFO' => $buycraft_language->get('language', 'server_key_info'),
+	'SERVER_KEY_INFO' => $buycraft_language->get('language', 'server_key_info', ['linkStart' => '<a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>', 'linkEnd' => '</a>']),
 	'SERVER_KEY_VALUE' => $server_key,
 	'ALLOW_GUESTS' => $buycraft_language->get('language', 'allow_guests'),
 	'ALLOW_GUESTS_VALUE' => ($allow_guests == 1),
