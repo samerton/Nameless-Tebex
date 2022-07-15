@@ -51,7 +51,7 @@ class Buycraft {
             $result = HttpClient::get('https://plugin.tebex.io/information', ['headers' => ['X-Tebex-Secret' => $server_key]]);
 
             if (!$result->hasError()) {
-                $result = $result->json()->response;
+                $result = $result->json();
 
                 // Update database
                 if (isset($result->account->domain)) {
