@@ -2,11 +2,11 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr6
+ *  NamelessMC version 2.0.0-pr13
  *
  *  License: MIT
  *
- *  Store latest purchases widget
+ *  Tebex latest purchases widget
  */
 class LatestPurchasesWidget extends WidgetBase {
     private Cache $_cache;
@@ -37,26 +37,25 @@ class LatestPurchasesWidget extends WidgetBase {
 	public function initialise(): void {
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
-		$queries = new Queries();
 
-		if($this->_cache->isCached('latest_purchases')){
+		if ($this->_cache->isCached('latest_purchases')) {
 			$latest_purchases = $this->_cache->retrieve('latest_purchases');
 
 		} else {
-			if($this->_cache->isCached('purchase_limit')){
+			if ($this->_cache->isCached('purchase_limit')) {
 				$purchase_limit = intval($this->_cache->retrieve('purchase_limit'));
 			} else {
 				$purchase_limit = 10;
 			}
 
-			$latest_purchases_query = $queries->orderAll('buycraft_payments', '`date`', 'DESC LIMIT ' . $purchase_limit);
-			$latest_purchases = array();
+			$latest_purchases_query = DB::getInstance()->query('SELECT * FROM nl2_buycraft_payments ORDER BY `date` DESC LIMIT ' . $purchase_limit);
+			$latest_purchases = [];
 
-			if (count($latest_purchases_query)) {
+			if ($latest_purchases_query->count()) {
 				$timeago = new TimeAgo(TIMEZONE);
 				$purchase_users = [];
 
-				foreach ($latest_purchases_query as $purchase) {
+				foreach ($latest_purchases_query->results() as $purchase) {
                     if (isset($purchase_users[$purchase->player_uuid])) {
                         [$user_id, $style, $username] = $purchase_users[$purchase->player_uuid];
                     } else {
