@@ -37,7 +37,7 @@ $category = DB::getInstance()->query(<<<SQL
            descriptions.image AS image
     FROM nl2_buycraft_categories AS categories
         LEFT JOIN nl2_buycraft_categories_descriptions AS descriptions
-    ON descriptions.category_id = categories.id
+            ON descriptions.category_id = categories.id
     WHERE categories.id = ?
 SQL, [$category_id]);
 
@@ -85,7 +85,23 @@ $currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_
 $currency = Output::getClean($currency->first()->value);
 
 // Get packages
-$packages = DB::getInstance()->query('SELECT packages.id AS id, packages.category_id AS category_id, packages.name AS name, packages.order AS `order`, packages.price AS price, packages.sale_active AS sale_active, packages.sale_discount AS sale_discount, descriptions.description AS description, descriptions.image AS image FROM nl2_buycraft_packages AS packages LEFT JOIN nl2_buycraft_packages_descriptions AS descriptions ON descriptions.package_id = packages.id WHERE packages.category_id = ? ORDER BY `order` ASC', array($category_id));
+$packages = DB::getInstance()->query(<<<SQL
+    SELECT packages.id AS id,
+           packages.category_id AS category_id,
+           packages.name AS name,
+           packages.order AS `order`,
+           packages.price AS price,
+           packages.sale_active AS sale_active,
+           packages.sale_discount AS sale_discount,
+           packages.type AS `type`,
+           descriptions.description AS description,
+           descriptions.image AS image
+    FROM nl2_buycraft_packages AS packages
+        LEFT JOIN nl2_buycraft_packages_descriptions AS descriptions
+            ON descriptions.package_id = packages.id
+    WHERE packages.category_id = ?
+    ORDER BY `order` ASC
+SQL, [$category_id]);
 
 if (!$packages->count()) {
 	$smarty->assign('NO_PACKAGES', $buycraft_language->get('language', 'no_packages'));
@@ -115,7 +131,7 @@ if (!$packages->count()) {
 			'sale_discount' => Output::getClean($package->sale_discount),
 			'description' => $content,
 			'image' => $image,
-			'link' => $store_url . '/checkout/packages/add/' . Output::getClean($package->id) . '/single'
+			'link' => $store_url . '/checkout/packages/add/' . Output::getClean($package->id) . ($package->type == 'subscription' ? '/subscribe' : '/single'),
 		);
 	}
 

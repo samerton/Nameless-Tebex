@@ -297,7 +297,7 @@ class Buycraft {
     }
 
     // Get packages
-    public static function updatePackages($server_key = null, $db = null): array {
+    public static function updatePackages($server_key = null, DB $db = null): array {
         if ($server_key) {
             $result = HttpClient::get('https://plugin.tebex.io/packages?verbose=true', ['headers' => ['X-Tebex-Secret' => $server_key]]);
 
@@ -308,12 +308,16 @@ class Buycraft {
 
                 if (count($result)) {
                     foreach ($result as $package) {
-                        $db->insert('buycraft_packages_descriptions', array(
+                        $db->update('buycraft_packages', $package->id, [
+                            'type' => $package->type,
+                        ]);
+
+                        $db->insert('buycraft_packages_descriptions', [
                             'id' => $package->id,
                             'package_id' => $package->id,
                             'description' => $package->description,
-                            'image' => $package->image
-                        ));
+                            'image' => $package->image,
+                        ]);
                     }
                 }
 

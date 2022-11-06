@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr13
+ *  NamelessMC version 2.0.2
  *
  *  License: MIT
  *
@@ -10,23 +10,24 @@
  */
 
 class Tebex_Module extends Module {
-	private $_buycraft_language, $_language, $_cache, $_buycraft_url;
+	private Language $_buycraft_language;
+	private Language $_language;
+	private string $_buycraft_url;
 
-	public function __construct($language, $buycraft_language, $pages, $cache){
+	public function __construct(Language $language, Language $buycraft_language, Pages $pages, Cache $cache){
 		$this->_language = $language;
 		$this->_buycraft_language = $buycraft_language;
-		$this->_cache = $cache;
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
 		$module_version = '1.2.3';
-		$nameless_version = '2.0.0-pr13';
+		$nameless_version = '2.0.2';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
 		// Get variables from cache
 		$cache->setCache('buycraft_settings');
-		if($cache->isCached('buycraft_url')){
+		if ($cache->isCached('buycraft_url')) {
 			$this->_buycraft_url = Output::getClean(rtrim($cache->retrieve('buycraft_url'), '/'));
 		} else {
 			$this->_buycraft_url = '/store';
@@ -48,6 +49,12 @@ class Tebex_Module extends Module {
 		// Ajax GET requests
 		$pages->addAjaxScript(URL::build('/queries/store/sync'));
 
+        $cache->setCache('tebex_migrate');
+        if (!$cache->isCached($nameless_version)) {
+            self::migrate();
+            $cache->store($nameless_version, true);
+        }
+
         EventHandler::registerEvent('renderTebexContent',
             $this->_buycraft_language->get('language', 'render_content'),
             [
@@ -67,15 +74,15 @@ class Tebex_Module extends Module {
         );
 
         EventHandler::registerListener('renderTebexContent', 'ContentHook::purify');
-        EventHandler::registerListener('renderTebexContent', 'ContentHook::codeTransform', false, 15);
-        EventHandler::registerListener('renderTebexContent', 'ContentHook::decode', false, 20);
-        EventHandler::registerListener('renderTebexContent', 'ContentHook::renderEmojis', false, 10);
-        EventHandler::registerListener('renderTebexContent', 'ContentHook::replaceAnchors', false, 15);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::codeTransform', 15);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::decode', 20);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::renderEmojis', 10);
+        EventHandler::registerListener('renderTebexContent', 'ContentHook::replaceAnchors', 15);
 
         EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::purify');
-        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::codeTransform', false, 15);
-        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::decode', false, 20);
-        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::replaceAnchors', false, 15);
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::codeTransform', 15);
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::decode', 20);
+        EventHandler::registerListener('renderTebexContentEdit', 'ContentHook::replaceAnchors', 15);
 	}
 
 	public function onInstall(){
@@ -377,5 +384,13 @@ class Tebex_Module extends Module {
 
     public function getDebugInfo(): array {
         return [];
+    }
+
+    private static function migrate(): void {
+        $db = DB::getInstance();
+
+        if (!$db->query('SHOW COLUMNS FROM `nl2_buycraft_packages` LIKE \'type\'')->count()) {
+            $db->addColumn('buycraft_packages', '`type`', 'varchar(64) DEFAULT NULL');
+        }
     }
 }
