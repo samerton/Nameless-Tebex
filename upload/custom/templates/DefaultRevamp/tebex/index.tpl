@@ -21,7 +21,9 @@
                                 <span class="text">{$category.title}</span>
                                 <i class="dropdown icon"></i>
                                 <div class="menu">
-                                    <a class="item" href="{$category.url}">{$category.title}</a>
+                                    {if !$category.only_subcategories}
+                                        <a class="item" href="{$category.url}">{$category.title}</a>
+                                    {/if}
                                     {foreach from=$category.subcategories item=subcategory}
                                         <a class="item" href="{$subcategory.url}">{$subcategory.title}</a>
                                     {/foreach}
