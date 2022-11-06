@@ -87,7 +87,7 @@
                                 {if $DISCOUNT_TYPE_RAW == 'value'}
                                     <tr>
                                         <td><strong>{$VALUE}</strong></td>
-                                        <td>{$CURRENCY}{$DISCOUNT_VALUE}</td>
+                                        <td>{$DISCOUNT_VALUE}</td>
                                     </tr>
                                 {elseif $DISCOUNT_TYPE_RAW == 'percentage'}
                                     <tr>

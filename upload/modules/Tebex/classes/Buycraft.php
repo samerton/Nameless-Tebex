@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr13
+ *  NamelessMC version 2.0.2
  *
  *  License: MIT
  *
@@ -498,5 +498,31 @@ class Buycraft {
     public static function validateDate(string $date, ?string $format = 'm/d/Y'): bool {
         $d = DateTime::createFromFormat($format, $date);
         return $d && $d->format($format) == $date;
+    }
+
+    /**
+     * Helper function to format price with currency
+     *
+     * @param $price string Price
+     * @param $currencyCode string Currency code (eg GBP, USD, EUR)
+     * @param $currencySymbol string Currency symbol
+     * @param $format ?string Format
+     * @return string Formatted price with currency
+     */
+    public static function formatPrice(
+        string $price,
+        string $currencyCode,
+        string $currencySymbol,
+        ?string $format = '{currencySymbol}{price}'
+    ): string {
+        return str_replace([
+            '{currencyCode}',
+            '{currencySymbol}',
+            '{price}'
+        ], [
+            $currencyCode,
+            $currencySymbol,
+            $price,
+        ], $format);
     }
 }

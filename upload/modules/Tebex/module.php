@@ -132,6 +132,14 @@ class Tebex_Module extends Module {
 		// Classes
 		require_once(ROOT_PATH . '/modules/Tebex/classes/Buycraft.php');
 
+		// Get currency format
+		$currency_format = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_format']);
+		if ($currency_format->count()) {
+			define('TEBEX_CURRENCY_FORMAT', $currency_format->first()->value);
+		} else {
+			define('TEBEX_CURRENCY_FORMAT', '{currencySymbol}{price}');
+		}
+
 		// Widgets
 		// Latest purchases
 		require_once(ROOT_PATH . '/modules/Tebex/widgets/LatestPurchasesWidget.php');

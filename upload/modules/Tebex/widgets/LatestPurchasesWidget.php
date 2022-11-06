@@ -35,6 +35,8 @@ class LatestPurchasesWidget extends WidgetBase {
 	}
 
 	public function initialise(): void {
+		require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
+
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
 
@@ -78,9 +80,14 @@ class LatestPurchasesWidget extends WidgetBase {
 					$latest_purchases[] = array(
 						'avatar' => AvatarSource::getAvatarFromUUID(Output::getClean($purchase->player_uuid)),
 						'profile' => URL::build('/profile/' . $username),
-						'price' => Output::getClean($purchase->amount),
-						'currency' => Output::getClean($purchase->currency_iso),
-						'currency_symbol' => Output::getClean($purchase->currency_symbol),
+						'price' => Output::getPurified(
+							Buycraft::formatPrice(
+								$purchase->amount,
+								$purchase->currency_iso,
+								$purchase->currency_symbol,
+								TEBEX_CURRENCY_FORMAT,
+							)
+						),
 						'uuid' => Output::getClean($purchase->player_uuid),
 						'date_full' => date(DATE_FORMAT, $purchase->date),
 						'date_friendly' => $timeago->inWords(date('d M Y, H:i', $purchase->date), $this->_language),

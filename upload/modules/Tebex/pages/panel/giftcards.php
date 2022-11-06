@@ -200,7 +200,7 @@ if (isset($errors) && count($errors))
 if (isset($_GET['action'])) {
 	if ($_GET['action'] == 'new' && $user->hasPermission('admincp.buycraft.giftcards.new')) {
 		// Get variables
-		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
 		if ($currency->count())
 			$currency = Output::getClean($currency->first()->value);
 		else

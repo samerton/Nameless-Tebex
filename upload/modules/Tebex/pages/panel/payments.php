@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/samerton
- *  NamelessMC version 2.0.0-pr13
+ *  NamelessMC version 2.0.2
  *
  *  License: MIT
  *
@@ -157,8 +157,14 @@ if (isset($_GET['user'])) {
 				'user_avatar' => $avatar,
 				'username' => Output::getClean($payment->player_name),
 				'user_uuid' => Output::getClean($payment->player_uuid),
-				'currency' => Output::getPurified($payment->currency_symbol),
-				'amount' => Output::getClean($payment->amount),
+				'amount' => Output::getPurified(
+					Buycraft::formatPrice(
+						$payment->amount,
+						$payment->currency_iso,
+						$payment->currency_symbol,
+						TEBEX_CURRENCY_FORMAT
+					)
+				),
 				'date' => date(DATE_FORMAT, $payment->date),
 				'link' => URL::build('/panel/tebex/payments', 'payment=' . Output::getClean($payment->id))
 			);
@@ -243,9 +249,14 @@ if (isset($_GET['user'])) {
 		'UUID' => $buycraft_language->get('language', 'uuid'),
 		'UUID_VALUE' => Output::getClean($payment->player_uuid),
 		'PRICE' => $buycraft_language->get('language', 'price'),
-		'PRICE_VALUE' => Output::getClean($payment->amount),
-		'CURRENCY_SYMBOL' => Output::getClean($payment->currency_symbol),
-		'CURRENCY_ISO' => Output::getClean($payment->currency_iso),
+		'PRICE_VALUE' => Output::getPurified(
+            Buycraft::formatPrice(
+                $payment->amount,
+                $payment->currency_iso,
+                $payment->currency_symbol,
+                '{price} {currencyCode}',
+            )
+        ),
 		'DATE' => $buycraft_language->get('language', 'date'),
 		'DATE_VALUE' => date(DATE_FORMAT, $payment->date),
 		'PENDING_COMMANDS' => $buycraft_language->get('language', 'pending_commands')
@@ -443,8 +454,14 @@ if (isset($_GET['user'])) {
 				'user_avatar' => $avatar,
 				'username' => Output::getClean($payment->player_name),
 				'uuid' => Output::getClean($payment->player_uuid),
-				'currency_symbol' => Output::getPurified($payment->currency_symbol),
-				'amount' => Output::getClean($payment->amount),
+				'amount' => Output::getPurified(
+					Buycraft::formatPrice(
+						$payment->amount,
+						$payment->currency_iso,
+						$payment->currency_symbol,
+						TEBEX_CURRENCY_FORMAT,
+					)
+				),
 				'date' => date(DATE_FORMAT, $payment->date),
 				'date_unix' => Output::getClean($payment->date),
 				'link' => URL::build('/panel/tebex/payments/', 'payment=' . Output::getClean($payment->id))

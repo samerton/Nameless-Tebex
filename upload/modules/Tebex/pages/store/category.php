@@ -39,7 +39,7 @@ $category = DB::getInstance()->query(<<<SQL
         LEFT JOIN nl2_buycraft_categories_descriptions AS descriptions
             ON descriptions.category_id = categories.id
     WHERE categories.id = ?
-SQL, [$category_id]);
+SQL, [$category_id], true);
 
 if (!$category->count()) {
 	require_once(ROOT_PATH . '/404.php');
@@ -64,6 +64,10 @@ if ($page_metadata->count()) {
 
 $page_title = Output::getClean($category->name);
 require_once ROOT_PATH . '/core/templates/frontend_init.php';
+require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
+
+// Load modules + template
+Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
 // Retrieve store info from database
 $store_url = DB::getInstance()->get('buycraft_settings', ['name', '=', 'domain']);
@@ -81,8 +85,11 @@ if ($home_tab->count())
 else
     $home_tab = 1;
 
-$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
-$currency = Output::getClean($currency->first()->value);
+$currency_code = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
+$currency_code = Output::getClean($currency_code->first()->value);
+
+$currency_symbol = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+$currency_symbol = Output::getClean($currency_symbol->first()->value);
 
 // Get packages
 $packages = DB::getInstance()->query(<<<SQL
@@ -101,7 +108,7 @@ $packages = DB::getInstance()->query(<<<SQL
             ON descriptions.package_id = packages.id
     WHERE packages.category_id = ?
     ORDER BY `order` ASC
-SQL, [$category_id]);
+SQL, [$category_id], true);
 
 if (!$packages->count()) {
 	$smarty->assign('NO_PACKAGES', $buycraft_language->get('language', 'no_packages'));
@@ -122,11 +129,27 @@ if (!$packages->count()) {
             $image = null;
         }
 
+		$realPrice = $package->sale_active == 1 ? $package->price - $package->sale_discount : $package->price;
+
 		$category_packages[] = array(
 			'id' => Output::getClean($package->id),
 			'name' => Output::getClean($package->name),
-			'price' => Output::getClean($package->price),
-			'real_price' => $package->sale_active == 1 ? Output::getClean($package->price - $package->sale_discount) : Output::getClean($package->price),
+			'price' => Output::getPurified(
+				Buycraft::formatPrice(
+					$package->price,
+					$currency_code,
+					$currency_symbol,
+					TEBEX_CURRENCY_FORMAT,
+				)
+			),
+			'real_price' => Output::getPurified(
+				Buycraft::formatPrice(
+					$realPrice,
+					$currency_code,
+					$currency_symbol,
+					TEBEX_CURRENCY_FORMAT,
+				)
+			),
 			'sale_active' => $package->sale_active == 1,
 			'sale_discount' => Output::getClean($package->sale_discount),
 			'description' => $content,
@@ -142,7 +165,7 @@ $smarty->assign(array(
 	'ACTIVE_CATEGORY' => Output::getClean($category->name),
 	'BUY' => $buycraft_language->get('language', 'buy'),
 	'CLOSE' => $language->get('general', 'close'),
-	'CURRENCY' => $currency,
+	'CURRENCY' => $currency_symbol,
 	'SALE' => $buycraft_language->get('language', 'sale')
 ));
 
@@ -192,9 +215,6 @@ $smarty->assign(array(
 $template->assets()->include([
     AssetTree::TINYMCE,
 ]);
-
-// Load modules + template
-Module::loadPage($user, $pages, $cache, $smarty, [$navigation, $cc_nav, $staffcp_nav], $widgets, $template);
 
 $template->onPageLoad();
 

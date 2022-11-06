@@ -45,7 +45,7 @@ if ($content->count()) {
     $content = '';
 }
 
-$categories_query = DB::getInstance()->query('SELECT id, name FROM nl2_buycraft_categories WHERE parent_category IS NULL ORDER BY `order` ASC');
+$categories_query = DB::getInstance()->query('SELECT id, name, only_subcategories FROM nl2_buycraft_categories WHERE parent_category IS NULL ORDER BY `order` ASC');
 $categories = array();
 
 if ($categories_query->count()) {
@@ -65,7 +65,8 @@ if ($categories_query->count()) {
 		$categories[$item->id] = array(
 			'url' => URL::build($buycraft_url . '/category/' . Output::getClean($item->id)),
 			'title' => Output::getClean($item->name),
-			'subcategories' => $subcategories
+			'subcategories' => $subcategories,
+			'only_subcategories' => $item->only_subcategories,
 		);
 	}
 }

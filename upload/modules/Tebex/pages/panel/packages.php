@@ -229,7 +229,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && $user->hasPermission(
 			$all_categories[] = $new_category;
 		}
 
-		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
 		if ($currency->count())
 			$currency = Output::getPurified($currency->first()->value);
 		else

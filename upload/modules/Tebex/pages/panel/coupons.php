@@ -252,7 +252,7 @@ if (isset($_GET['action'])) {
 		// Get variables
         $packages = DB::getInstance()->query('SELECT * FROM nl2_buycraft_packages ORDER BY `order` ASC')->results();
         $categories = DB::getInstance()->query('SELECT * FROM nl2_buycraft_categories ORDER BY `order` ASC')->results();
-        $currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+        $currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
 		if ($currency->count())
 			$currency = Output::getPurified($currency->first()->value);
 		else
@@ -417,7 +417,7 @@ if (isset($_GET['action'])) {
 		}
 
 		// Currency
-		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		$currency = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
 		if (!$currency->count())
 			$currency = '';
 		else
@@ -461,7 +461,7 @@ if (isset($_GET['action'])) {
 		}
 
 		$smarty->assign(array(
-			'VIEWING_COUPON' => str_replace('{x}', Output::getClean($coupon->code), $buycraft_language->get('language', 'viewing_coupon_x')),
+			'VIEWING_COUPON' => $buycraft_language->get('language', 'viewing_coupon', ['coupon' => Output::getClean($coupon->code)]),
 			'BACK' => $language->get('general', 'back'),
 			'BACK_LINK' => URL::build('/panel/tebex/coupons'),
 			'COUPON_ID' => Output::getClean($coupon->id),
@@ -481,8 +481,14 @@ if (isset($_GET['action'])) {
 			'DISCOUNT_TYPE_RAW' => Output::getClean($coupon->discount_type),
 			'VALUE' => $buycraft_language->get('language', 'value'),
 			'PERCENTAGE' => $buycraft_language->get('language', 'percentage'),
-			'CURRENCY' => $currency,
-			'DISCOUNT_VALUE' => sprintf('%0.2f', $coupon->discount_value),
+			'DISCOUNT_VALUE' => Output::getPurified(
+				Buycraft::formatPrice(
+					sprintf('%0.2f', $coupon->discount_value),
+					$currency,
+					'',
+					'{price} {currencyCode}',
+				)
+			),
 			'DISCOUNT_PERCENTAGE' => Output::getClean($coupon->discount_percentage),
 			'START_DATE' => $buycraft_language->get('language', 'start_date'),
 			'START_DATE_VALUE' => date(DATE_FORMAT, $coupon->start_date),
@@ -493,7 +499,14 @@ if (isset($_GET['action'])) {
 			'UNLIMITED_USAGE' => $buycraft_language->get('language', 'unlimited_usage'),
 			'USES_COUNT' => Output::getClean($coupon->redeem_limit),
 			'MINIMUM_SPEND' => $buycraft_language->get('language', 'minimum_spend'),
-			'MINIMUM_SPEND_VALUE' => sprintf('%0.2f', $coupon->minimum),
+			'MINIMUM_SPEND_VALUE' => Output::getPurified(
+				Buycraft::formatPrice(
+					sprintf('%0.2f', $coupon->minimum),
+					$currency,
+					'',
+					'{price} {currencyCode}',
+				)
+			),
 			'USER_LIMIT' => $buycraft_language->get('language', 'user_limit'),
 			'USER_LIMIT_VALUE' => Output::getClean($coupon->user_limit),
 			'BASKET_TYPE' => $buycraft_language->get('language', 'basket_type'),

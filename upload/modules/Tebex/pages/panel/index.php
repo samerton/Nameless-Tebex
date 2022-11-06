@@ -27,6 +27,11 @@ if (isset($_POST) && !empty($_POST)) {
 
 	if (Token::check(Input::get('token'))) {
 		$validation = Validate::check($_POST, [
+            'currency_format' => [
+                Validate::REQUIRED => true,
+                Validate::MIN => 7,
+                Validate::MAX => 64,
+            ],
 			'server_key' => [
 				Validate::MIN => 40,
 				Validate::MAX => 40
@@ -35,12 +40,17 @@ if (isset($_POST) && !empty($_POST)) {
 				Validate::MAX => 100000
 			],
 		])->messages([
+            'currency_format' => [
+                Validate::REQUIRED => $buycraft_language->get('language', 'currency_format_required'),
+                Validate::MIN => $buycraft_language->get('language', 'currency_format_min', ['min' => 7]),
+                Validate::MAX => $buycraft_language->get('language', 'currency_format_max', ['max' => 64]),
+            ],
             'server_key' => [
                 Validate::MIN => $buycraft_language->get('language', 'invalid_server_key'),
                 Validate::MAX => $buycraft_language->get('language', 'invalid_server_key'),
             ],
             'store_content' => [
-                Validate::MAX => $buycraft_language->get('language', 'store_content_max', [100000]),
+                Validate::MAX => $buycraft_language->get('language', 'store_content_max', ['max' => 100000]),
             ],
         ]);
 
@@ -55,8 +65,26 @@ if (isset($_POST) && !empty($_POST)) {
             else
                 $home_tab = 0;
 
-			try {
+            try {
+                $currency_format = $db->get('buycraft_settings', ['name', '=', 'currency_format']);
 
+                if ($currency_format->count()) {
+                    $currency_format = $currency_format->first()->id;
+                    $db->update('buycraft_settings', $currency_format, [
+                        'value' => Input::get('currency_format'),
+                    ]);
+                } else {
+                    $db->insert('buycraft_settings', [
+                        'name' => 'currency_format',
+                        'value' => Input::get('currency_format'),
+                    ]);
+                }
+
+            } catch(Exception $e){
+                $errors[] = $e->getMessage();
+            }
+
+			try {
 				$server_key = $db->get('buycraft_settings', array('name', '=', 'server_key'));
 
 				if ($server_key->count()) {
@@ -163,12 +191,7 @@ if (isset($_POST) && !empty($_POST)) {
 				$success = $buycraft_language->get('language', 'updated_successfully');
 
 		} else {
-			foreach($validation->errors() as $error){
-				if(strpos($error, 'server_key') !== false)
-					$errors[] = $buycraft_language->get('language', 'invalid_server_key');
-				else
-					$errors[] = $buycraft_language->get('language', 'store_content_max');
-			}
+			$errors = $validation->errors();
 		}
 
 	} else
@@ -196,6 +219,13 @@ if ($server_key->count())
 	$server_key = Output::getClean($server_key->first()->value);
 else
 	$server_key = '';
+
+$currency_format = $db->get('buycraft_settings', ['name', '=', 'currency_format']);
+
+if ($currency_format->count())
+    $currency_format = $currency_format->first()->value;
+else
+    $currency_format = '{currencySymbol}{price}';
 
 $allow_guests = $db->get('buycraft_settings', array('name', '=', 'allow_guests'));
 
@@ -240,6 +270,9 @@ $smarty->assign(array(
 	'SERVER_KEY' => $buycraft_language->get('language', 'server_key'),
 	'SERVER_KEY_INFO' => $buycraft_language->get('language', 'server_key_info', ['linkStart' => '<a href=&quot;https://server.tebex.io/game-servers&quot; rel=&quot;nofollow&quot; target=&quot;_blank&quot;>', 'linkEnd' => '</a>']),
 	'SERVER_KEY_VALUE' => $server_key,
+	'CURRENCY_FORMAT' => $buycraft_language->get('language', 'currency_format'),
+	'CURRENCY_FORMAT_INFO' => $buycraft_language->get('language', 'currency_format_info'),
+	'CURRENCY_FORMAT_VALUE' => $currency_format,
 	'ALLOW_GUESTS' => $buycraft_language->get('language', 'allow_guests'),
 	'ALLOW_GUESTS_VALUE' => ($allow_guests == 1),
 	'HOME_TAB' => $buycraft_language->get('language', 'show_home_tab'),

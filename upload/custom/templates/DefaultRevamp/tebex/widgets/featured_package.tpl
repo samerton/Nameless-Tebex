@@ -16,9 +16,9 @@
                 <span class="header">{$PACKAGE.name}</span>
                 <div class="ui divider"></div>
                 {if $PACKAGE.sale_active}
-                    <span style="color: #dc3545;text-decoration:line-through;">{$CURRENCY}{$PACKAGE.price}</span>
+                    <span style="color: #dc3545;text-decoration:line-through;">{$PACKAGE.price}</span>
                 {/if}
-                {$CURRENCY}{$PACKAGE.real_price}
+                {$PACKAGE.real_price}
             </div>
             <a class="ui bottom attached blue button" href="{$PACKAGE.link}">
                 {$VIEW} &raquo;

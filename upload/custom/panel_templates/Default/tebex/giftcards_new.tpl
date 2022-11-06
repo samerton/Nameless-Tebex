@@ -47,10 +47,10 @@
                             <div class="form-group">
                                 <label for="inputValue">{$GIFT_CARD_VALUE}</label>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
+                                    <input type="number" class="form-control" id="inputValue" name="amount" placeholder="{$GIFT_CARD_VALUE}" step="0.01">
+                                    <div class="input-group-append">
                                         <span class="input-group-text">{$CURRENCY}</span>
                                     </div>
-                                    <input type="number" class="form-control" id="inputValue" name="amount" placeholder="{$GIFT_CARD_VALUE}" step="0.01">
                                 </div>
                             </div>
                             <div class="form-group">

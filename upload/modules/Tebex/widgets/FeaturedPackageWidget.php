@@ -35,6 +35,8 @@ class FeaturedPackageWidget extends WidgetBase {
 	}
 
 	public function initialise(): void {
+		require_once ROOT_PATH . '/modules/Tebex/classes/Buycraft.php';
+
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
 		if($this->_cache->isCached('featured_packages'))
@@ -62,19 +64,38 @@ class FeaturedPackageWidget extends WidgetBase {
 			$buycraft_url = '/store';
 		}
 
-		$currency = DB::getInstance()->query('SELECT * FROM nl2_buycraft_settings WHERE `name` = \'currency_symbol\'', array());
-		$currency = $currency->count() ? Output::getPurified($currency->first()->value) : '$';
+		$currencyCode = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_iso']);
+		$currencyCode = $currencyCode->count() ? Output::getPurified($currencyCode->first()->value) : '';
+
+		$currencySymbol = DB::getInstance()->get('buycraft_settings', ['name', '=', 'currency_symbol']);
+		$currencySymbol = $currencySymbol->count() ? Output::getPurified($currencySymbol->first()->value) : '';
 
 		$content = Output::getDecoded($package->description);
 		$content = Output::getPurified($content);
 
 		$image = (isset($package->image) ? Output::getClean(Output::getDecoded($package->image)) : null);
 
+		$realPrice = $package->sale_active == 1 ? $package->price - $package->sale_discount : $package->price;
+
 		$template_package = array(
 			'id' => Output::getClean($package->id),
 			'name' => Output::getClean($package->name),
-			'price' => Output::getClean($package->price),
-			'real_price' => $package->sale_active == 1 ? Output::getClean($package->price - $package->sale_discount) : Output::getClean($package->price),
+			'price' => Output::getPurified(
+				Buycraft::formatPrice(
+					$package->price,
+					$currencyCode,
+					$currencySymbol,
+					TEBEX_CURRENCY_FORMAT,
+				)
+			),
+			'real_price' => Output::getPurified(
+				Buycraft::formatPrice(
+					$realPrice,
+					$currencyCode,
+					$currencySymbol,
+					TEBEX_CURRENCY_FORMAT,
+				)
+			),
 			'sale_active' => $package->sale_active == 1,
 			'sale_discount' => Output::getClean($package->sale_discount),
 			'description' => $content,
@@ -86,8 +107,7 @@ class FeaturedPackageWidget extends WidgetBase {
 			'FEATURED_PACKAGE' => $this->_buycraft_language->get('language', 'featured_package'),
 			'PACKAGE' => $template_package,
 			'VIEW' => $this->_language->get('general', 'view'),
-			'SALE' => $this->_buycraft_language->get('language', 'sale'),
-			'CURRENCY' => $currency
+			'SALE' => $this->_buycraft_language->get('language', 'sale')
 		));
 
 		$this->_content = $this->_smarty->fetch('tebex/widgets/featured_package.tpl');

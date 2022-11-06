@@ -43,6 +43,12 @@
                                 <input id="inputSecretKey" name="server_key" class="form-control" placeholder="{$SERVER_KEY}" value="{$SERVER_KEY_VALUE}">
                             </div>
 
+                            <div class="form-group">
+                                <label for="inputCurrencyFormat">{$CURRENCY_FORMAT}</label>
+                                <span class="badge badge-info" data-html="true" data-toggle="popover" title="{$INFO}" data-content="{$CURRENCY_FORMAT_INFO}"><i class="fas fa-question-circle"></i></span>
+                                <input type="text" class="form-control" id="inputCurrencyFormat" name="currency_format" placeholder="{$CURRENCY_FORMAT}" value="{$CURRENCY_FORMAT_VALUE}">
+                            </div>
+
                             <div class="form-group custom-control custom-switch">
                                 <input type="checkbox" name="allow_guests" id="inputAllowGuests" class="custom-control-input" {if $ALLOW_GUESTS_VALUE} checked{/if} />
                                 <label for="inputAllowGuests" class="custom-control-label">{$ALLOW_GUESTS}</label>

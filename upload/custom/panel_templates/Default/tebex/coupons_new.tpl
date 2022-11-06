@@ -99,10 +99,10 @@
                                     <div class="form-group" id="discountTypeValue">
                                         <label for="inputDiscountTypeValue">{$DISCOUNT_TYPE_VALUE}</label>
                                         <div class="input-group mb-3">
-                                            <div class="input-group-prepend">
+                                            <input type="number" class="form-control" name="discount_amount" id="inputDiscountTypeValue" placeholder="{$DISCOUNT_TYPE_VALUE}" value="{$DISCOUNT_TYPE_VALUE_VALUE}" step="0.01">
+                                            <div class="input-group-append">
                                                 <span class="input-group-text">{$CURRENCY}</span>
                                             </div>
-                                            <input type="number" class="form-control" name="discount_amount" id="inputDiscountTypeValue" placeholder="{$DISCOUNT_TYPE_VALUE}" value="{$DISCOUNT_TYPE_VALUE_VALUE}" step="0.01">
                                         </div>
                                     </div>
                                     <div class="form-group" id="discountTypePercentage">
@@ -173,10 +173,10 @@
                             <div class="form-group">
                                 <label for="inputMinimum">{$MINIMUM_SPEND}</label>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
+                                    <input type="number" class="form-control" name="minimum" id="inputMinimum" placeholder="{$MINIMUM_SPEND}" value="{$MINIMUM_SPEND_VALUE}" step="0.01">
+                                    <div class="input-group-append">
                                         <span class="input-group-text">{$CURRENCY}</span>
                                     </div>
-                                    <input type="number" class="form-control" name="minimum" id="inputMinimum" placeholder="{$MINIMUM_SPEND}" value="{$MINIMUM_SPEND_VALUE}" step="0.01">
                                 </div>
                             </div>
 
