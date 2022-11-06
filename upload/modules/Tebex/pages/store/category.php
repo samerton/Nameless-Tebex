@@ -2,7 +2,7 @@
 /*
  *	Made by Samerton
  *  https://github.com/NamelessMC/Nameless/
- *  NamelessMC version 2.0.0-pr13
+ *  NamelessMC version 2.0.2
  *
  *  License: MIT
  *
@@ -29,7 +29,17 @@ if (!is_numeric($category_id[0])) {
 $category_id = $category_id[0];
 
 // Query category
-$category = DB::getInstance()->query('SELECT categories.id AS id, categories.name AS name, categories.parent_category AS parent_category, descriptions.description AS description, descriptions.image AS image FROM nl2_buycraft_categories AS categories LEFT JOIN nl2_buycraft_categories_descriptions AS descriptions ON descriptions.category_id = categories.id WHERE categories.id = ?', array($category_id));
+$category = DB::getInstance()->query(<<<SQL
+    SELECT categories.id AS id,
+           categories.name AS name,
+           categories.parent_category AS parent_category,
+           descriptions.description AS description,
+           descriptions.image AS image
+    FROM nl2_buycraft_categories AS categories
+        LEFT JOIN nl2_buycraft_categories_descriptions AS descriptions
+    ON descriptions.category_id = categories.id
+    WHERE categories.id = ?
+SQL, [$category_id]);
 
 if (!$category->count()) {
 	require_once(ROOT_PATH . '/404.php');
@@ -146,7 +156,8 @@ if ($categories_query->count()) {
 			'url' => URL::build($buycraft_url . '/category/' . Output::getClean($item->id)),
 			'title' => Output::getClean($item->name),
 			'subcategories' => $subcategories,
-			'active' => !$active && Output::getClean($category->name) == Output::getClean($item->name)
+			'active' => !$active && Output::getClean($category->name) == Output::getClean($item->name),
+			'only_subcategories' => $item->only_subcategories,
 		);
 	}
 }

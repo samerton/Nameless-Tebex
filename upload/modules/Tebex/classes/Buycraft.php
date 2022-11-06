@@ -251,7 +251,7 @@ class Buycraft {
                                     'id' => $subcategory->id,
                                     'order' => $subcategory->order,
                                     'name' => $subcategory->name,
-                                    'only_subcategories' => 0,
+                                    'only_subcategories' => isset($subcategory->only_subcategories) && $subcategory->only_subcategories ? 1 : 0,
                                     'parent_category' => $category->id
                                 ));
 
