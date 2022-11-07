@@ -122,7 +122,7 @@
     "language/show_home_tab": "Registerkarte \"Startseite\" anzeigen?",
     "language/start_date": "Startdatum (jjjj-mm-tt)",
     "language/store": "Store",
-    "language/store_content_max": "Der Inhalt des Store Indexes darf maximal 1.000.000 Zeichen lang sein.",
+    "language/store_content_max": "Der Inhalt des Store Indexes darf maximal {{max}} Zeichen lang sein.",
     "language/store_index_content": "Store Index Content",
     "language/store_path": "Store Path",
     "language/subscriptions": "Abonnements",
@@ -164,5 +164,10 @@
     "language/editing_package": "Bearbeitung des Pakets {{package}}",
     "language/render_content": "Inhalt wiedergeben",
     "language/viewing_ban": "Ban anschauen {{ban}}",
-    "language/viewing_payments_for_user": "Zahlungen für den Benutzer {{user}} anzeigen"
+    "language/viewing_payments_for_user": "Zahlungen für den Benutzer {{user}} anzeigen",
+    "language/currency_format": "Währungsformat",
+    "language/currency_format_info": "Verfügbare Variablen sind {currencyCode}, {currencySymbol} und {price}",
+    "language/currency_format_max": "Das Währungsformat darf maximal {{max}} Zeichen lang sein.",
+    "language/currency_format_min": "Das Währungsformat muss aus mindestens {{min}} Zeichen bestehen.",
+    "language/currency_format_required": "Das Währungsformat ist erforderlich."
 }
