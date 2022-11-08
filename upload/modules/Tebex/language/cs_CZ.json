@@ -122,7 +122,7 @@
     "language/show_home_tab": "Zobrazit domovskou záložku?",
     "language/start_date": "Datum začátku (yyyy-mm-dd)",
     "language/store": "Obchod",
-    "language/store_content_max": "Obsah hlavní stránky obchodu může obsahovat maximálně 1 000 000 znaků.",
+    "language/store_content_max": "Obsah hlavní stránky obchodu může obsahovat maximálně {{max}} znaků.",
     "language/store_index_content": "Obsah hlavní stránky obchodu",
     "language/store_path": "Cesta k obchodu",
     "language/subscriptions": "Předplatná",
@@ -164,5 +164,10 @@
     "language/viewing_payments_for_user": "Prohlížení plateb uživatele {{user}}",
     "language/editing_category": "Úprava kategorie {{category}}",
     "language/viewing_ban": "Prohlížení banu {{ban}}",
-    "language/viewing_gift_card": "Prohlížení dárkové karty {{card}}"
+    "language/viewing_gift_card": "Prohlížení dárkové karty {{card}}",
+    "language/currency_format": "Formát měny",
+    "language/currency_format_info": "Dostupné proměnné jsou {currencyCode}, {currencySymbol} a {price}",
+    "language/currency_format_max": "Formát proměnné může obsahovat maximálně {{max}}.",
+    "language/currency_format_min": "Formát měny musí obsahovat alespoň {{min}} znaky.",
+    "language/currency_format_required": "Je vyžadován formát měny."
 }
