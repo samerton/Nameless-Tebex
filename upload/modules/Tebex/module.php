@@ -51,8 +51,12 @@ class Tebex_Module extends Module {
 
         $cache->setCache('tebex_migrate');
         if (!$cache->isCached($nameless_version)) {
-            self::migrate();
-            $cache->store($nameless_version, true);
+            try {
+                self::migrate();
+                $cache->store($nameless_version, true);
+            } catch (Exception $e) {
+                ErrorHandler::logCustomError('Unable to migrate Tebex module: ' . $e->getMessage());
+            }
         }
 
         EventHandler::registerEvent('renderTebexContent',
