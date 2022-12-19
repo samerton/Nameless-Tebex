@@ -1,7 +1,7 @@
 <div class="ui fluid card" id="widget-featured-package">
     <div class="content">
         <h4 class="ui header">{$LATEST_PURCHASES}</h4>
-        {if count($PURCHASES)}
+        {if isset($PURCHASES) && count($PURCHASES)}
             {foreach from=$PURCHASES item=purchase name=purchaseLoop}
                 <div class="ui relaxed list">
                     <div class="item">
