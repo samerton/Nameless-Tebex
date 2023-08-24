@@ -20,8 +20,8 @@ class Tebex_Module extends Module {
 
 		$name = 'Tebex';
 		$author = '<a href="https://samerton.me" target="_blank" rel="nofollow noopener">Samerton</a>';
-		$module_version = '1.3.1';
-		$nameless_version = '2.0.2';
+		$module_version = '1.3.2';
+		$nameless_version = '2.1.0';
 
 		parent::__construct($this, $name, $author, $module_version, $nameless_version);
 
@@ -145,13 +145,15 @@ class Tebex_Module extends Module {
 		}
 
 		// Widgets
-		// Latest purchases
-		require_once(ROOT_PATH . '/modules/Tebex/widgets/LatestPurchasesWidget.php');
-		$widgets->add(new LatestPurchasesWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
+        if ($pages->getActivePage()['widgets'] || (defined('PANEL_PAGE') && str_contains(PANEL_PAGE, 'widget'))) {
+            // Latest purchases
+            require_once(ROOT_PATH . '/modules/Tebex/widgets/LatestPurchasesWidget.php');
+            $widgets->add(new LatestPurchasesWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
 
-		// Featured package
-		require_once(ROOT_PATH . '/modules/Tebex/widgets/FeaturedPackageWidget.php');
-		$widgets->add(new FeaturedPackageWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
+            // Featured package
+            require_once(ROOT_PATH . '/modules/Tebex/widgets/FeaturedPackageWidget.php');
+            $widgets->add(new FeaturedPackageWidget($cache, $smarty, $this->_language, $this->_buycraft_language));
+        }
 
 		// Add link to navbar
 		$cache->setCache('navbar_order');

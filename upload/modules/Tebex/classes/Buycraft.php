@@ -330,7 +330,12 @@ class Buycraft {
         return ['error' => 'No server key'];
     }
 
-    // Get payments
+    /**
+     * Get payments
+     * @param string $server_key
+     * @param DB $db
+     * @return array|string[]
+     */
     public static function updatePayments($server_key = null, $db = null): array {
         if ($server_key) {
             $result = HttpClient::get('https://plugin.tebex.io/payments', ['headers' => ['X-Tebex-Secret' => $server_key]]);
@@ -338,11 +343,11 @@ class Buycraft {
             if (!$result->hasError()) {
                 $result = $result->json();
 
-            	$db->createQuery('TRUNCATE TABLE nl2_buycraft_payments');
+            	$db->query('TRUNCATE TABLE nl2_buycraft_payments');
 
                 if (count($result)) {
                     foreach($result as $payment){
-                        $db->createQuery('INSERT INTO nl2_buycraft_payments (`id`, `amount`, `date`, `currency_iso`, `currency_symbol`, `player_uuid`, `player_name`) VALUES (?, ?, ?, ?, ?, ?, ?)', array(
+                        $db->query('INSERT INTO nl2_buycraft_payments (`id`, `amount`, `date`, `currency_iso`, `currency_symbol`, `player_uuid`, `player_name`) VALUES (?, ?, ?, ?, ?, ?, ?)', array(
                             $payment->id,
                             $payment->amount,
                             strtotime($payment->date),

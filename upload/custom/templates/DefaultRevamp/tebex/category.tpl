@@ -7,7 +7,7 @@
 
 <div class="ui stackable grid">
     <div class="ui centered row">
-        <div class="ui {if count($WIDGETS)}ten wide tablet twelve wide computer{else}sixteen wide{/if} column">
+        <div class="ui {if count($WIDGETS_RIGHT)}ten wide tablet twelve wide computer{else}sixteen wide{/if} column">
             <div class="ui padded segment">
                 <div class="ui top attached menu">
                     {if $SHOW_HOME_TAB eq '1'}
@@ -103,9 +103,9 @@
                 </div>
             </div>
         </div>
-        {if count($WIDGETS)}
+        {if count($WIDGETS_RIGHT)}
             <div class="ui six wide tablet four wide computer column">
-                {foreach from=$WIDGETS item=widget}
+                {foreach from=$WIDGETS_RIGHT item=widget}
                     {$widget}
                 {/foreach}
             </div>

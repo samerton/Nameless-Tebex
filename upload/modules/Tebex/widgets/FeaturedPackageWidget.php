@@ -13,25 +13,16 @@ class FeaturedPackageWidget extends WidgetBase {
     private Language $_language, $_buycraft_language;
 
 	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language){
-        $widget_query = self::getData('Featured Package');
-
-        parent::__construct(self::parsePages($widget_query));
-
 		$this->_smarty = $smarty;
 		$this->_language = $language;
 		$this->_buycraft_language = $buycraft_language;
 		$this->_cache = $cache;
 
-		// Get order
-		$order = DB::getInstance()->query('SELECT `order` FROM nl2_widgets WHERE `name` = ?', array('Featured Package'))->first();
-
 		// Set widget variables
 		$this->_module = 'Tebex';
 		$this->_name = 'Featured Package';
-		$this->_location = 'right';
 		$this->_description = 'Display a store package to feature across your website';
 		$this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/featured_package.php';
-		$this->_order = $order->order;
 	}
 
 	public function initialise(): void {
@@ -39,9 +30,9 @@ class FeaturedPackageWidget extends WidgetBase {
 
 		// Generate HTML code for widget
 		$this->_cache->setCache('buycraft_data');
-		if($this->_cache->isCached('featured_packages'))
-			$featured_packages = $this->_cache->retrieve('featured_packages');
-		else {
+		if ($this->_cache->isCached('featured_packages')) {
+            $featured_packages = $this->_cache->retrieve('featured_packages');
+        } else {
 			$this->_content = '';
 			return;
 		}
@@ -49,7 +40,7 @@ class FeaturedPackageWidget extends WidgetBase {
 		$package = $featured_packages[mt_rand(0, count($featured_packages) - 1)];
 		$query = DB::getInstance()->query('SELECT packages.id AS id, packages.category_id AS category_id, packages.name AS name, packages.order AS `order`, packages.price AS price, packages.sale_active AS sale_active, packages.sale_discount AS sale_discount, descriptions.description AS description, descriptions.image AS image FROM nl2_buycraft_packages AS packages LEFT JOIN nl2_buycraft_packages_descriptions AS descriptions ON descriptions.package_id = packages.id WHERE packages.id = ? ORDER BY `order` ASC', array($package));
 
-		if(!$query->count()){
+		if (!$query->count()) {
 			$this->_content = '';
 			return;
 		}
@@ -58,7 +49,7 @@ class FeaturedPackageWidget extends WidgetBase {
 
 		// Get variables from cache
 		$this->_cache->setCache('buycraft_settings');
-		if($this->_cache->isCached('buycraft_url')){
+		if ($this->_cache->isCached('buycraft_url')) {
 			$buycraft_url = Output::getClean(rtrim($this->_cache->retrieve('buycraft_url'), '/'));
 		} else {
 			$buycraft_url = '/store';
