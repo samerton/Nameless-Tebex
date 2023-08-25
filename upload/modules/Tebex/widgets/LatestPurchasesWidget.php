@@ -12,17 +12,26 @@ class LatestPurchasesWidget extends WidgetBase {
     private Cache $_cache;
     private Language $_language, $_buycraft_language;
 
-	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language){
-		$this->_smarty = $smarty;
-		$this->_language = $language;
-		$this->_buycraft_language = $buycraft_language;
-		$this->_cache = $cache;
+	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language) {
+        $widget_query = self::getData('Latest Purchases');
 
-		// Set widget variables
-		$this->_module = 'Tebex';
-		$this->_name = 'Latest Purchases';
-		$this->_description = 'Displays a list of your store\'s most recent purchases.';
-		$this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/latest_purchases.php';
+        parent::__construct(self::parsePages($widget_query));
+
+        $this->_smarty = $smarty;
+        $this->_language = $language;
+        $this->_buycraft_language = $buycraft_language;
+        $this->_cache = $cache;
+
+        // Get order
+        $order = DB::getInstance()->query('SELECT `order` FROM nl2_widgets WHERE `name` = ?', array('Latest Purchases'))->first();
+
+        // Set widget variables
+        $this->_module = 'Tebex';
+        $this->_name = 'Latest Purchases';
+        $this->_location = 'right';
+        $this->_description = 'Displays a list of your store\'s most recent purchases.';
+        $this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/latest_purchases.php';
+        $this->_order = $order->order;
 	}
 
 	public function initialise(): void {
