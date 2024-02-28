@@ -94,7 +94,7 @@ if (isset($_GET['action'])) {
 						}
 
 						if (isset($_POST['minimum'])) {
-							$post_object->minimum = $_POST['minimum'] + 0;
+							$post_object->minimum = (float) $_POST['minimum'];
 						} else {
 							$post_object->minimum = 0;
 						}
@@ -141,7 +141,7 @@ if (isset($_GET['action'])) {
 						if (isset($_POST['packages']) && is_array($_POST['packages'])) {
 							$packages = array();
 							foreach ($_POST['packages'] as $package) {
-								$packages[] = $package + 0;
+								$packages[] = (int) $package;
 							}
 							$post_object->packages = $packages;
 						} else {
@@ -151,7 +151,7 @@ if (isset($_GET['action'])) {
 						if (isset($_POST['categories']) && is_array($_POST['categories'])) {
 							$categories = array();
 							foreach ($_POST['categories'] as $category) {
-								$categories[] = $category + 0;
+								$categories[] = (int) $category;
 							}
 							$post_object->categories = $categories;
 						} else {
@@ -169,13 +169,13 @@ if (isset($_GET['action'])) {
 						}
 
 						if (isset($_POST['discount_amount'])) {
-							$post_object->discount_amount = $_POST['discount_amount'] + 0;
+							$post_object->discount_amount = (float) $_POST['discount_amount'];
 						} else {
 							$post_object->discount_amount = 0;
 						}
 
 						if (isset($_POST['discount_percentage'])) {
-							$post_object->discount_percentage = $_POST['discount_percentage'] + 0;
+							$post_object->discount_percentage = (float) $_POST['discount_percentage'];
 						} else {
 							$post_object->discount_percentage = 0;
 						}
@@ -193,7 +193,7 @@ if (isset($_GET['action'])) {
 						}
 
 						if (isset($_POST['expire_limit'])) {
-							$post_object->expire_limit = $_POST['expire_limit'] + 0;
+							$post_object->expire_limit = (int) $_POST['expire_limit'];
 						} else {
 							$post_object->expire_limit = 0;
 						}
