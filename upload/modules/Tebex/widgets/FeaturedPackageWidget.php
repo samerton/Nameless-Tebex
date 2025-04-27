@@ -12,26 +12,17 @@ class FeaturedPackageWidget extends WidgetBase {
     private Cache $_cache;
     private Language $_language, $_buycraft_language;
 
-	public function __construct(Cache $cache, Smarty $smarty, Language $language, Language $buycraft_language){
-        $widget_query = self::getData('Featured Package');
+	public function __construct(Cache $cache, TemplateEngine $engine, Language $language, Language $buycraft_language){
+		$this->_engine = $engine;
+		$this->_language = $language;
+		$this->_buycraft_language = $buycraft_language;
+		$this->_cache = $cache;
 
-        parent::__construct(self::parsePages($widget_query));
-
-        $this->_smarty = $smarty;
-        $this->_language = $language;
-        $this->_buycraft_language = $buycraft_language;
-        $this->_cache = $cache;
-
-        // Get order
-        $order = DB::getInstance()->query('SELECT `order` FROM nl2_widgets WHERE `name` = ?', array('Featured Package'))->first();
-
-        // Set widget variables
-        $this->_module = 'Tebex';
-        $this->_name = 'Featured Package';
-        $this->_location = 'right';
-        $this->_description = 'Display a store package to feature across your website';
-        $this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/featured_package.php';
-        $this->_order = $order->order;
+		// Set widget variables
+		$this->_module = 'Tebex';
+		$this->_name = 'Featured Package';
+		$this->_description = 'Display a store package to feature across your website';
+		$this->_settings = ROOT_PATH . '/modules/Tebex/widgets/admin/featured_package.php';
 	}
 
 	public function initialise(): void {
@@ -103,13 +94,13 @@ class FeaturedPackageWidget extends WidgetBase {
 			'link' => URL::build($buycraft_url . '/category/' . Output::getClean($package->category_id))
 		);
 
-		$this->_smarty->assign(array(
+		$this->_engine->addVariables(array(
 			'FEATURED_PACKAGE' => $this->_buycraft_language->get('language', 'featured_package'),
 			'PACKAGE' => $template_package,
 			'VIEW' => $this->_language->get('general', 'view'),
 			'SALE' => $this->_buycraft_language->get('language', 'sale')
 		));
 
-		$this->_content = $this->_smarty->fetch('tebex/widgets/featured_package.tpl');
+		$this->_content = $this->_engine->fetch('tebex/widgets/featured_package.tpl');
 	}
 }
